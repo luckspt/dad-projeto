@@ -29,7 +29,8 @@ namespace TransactionManager
         public void Free(List<String> keys)
         {
             // TODO: implement
-            // TODO: remove from leasedKeys!!!! we do not *request* to remove from the lease managers -> they're the ones that tells us to remove
+            // TODO: if it holds a lease that coflicts with another transaction manager, free it after executing the transaction.
+            // - otherwise, it can keep it indefinitely
         }
     }
 }
