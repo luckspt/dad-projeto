@@ -1,0 +1,63 @@
+﻿syntax = "proto3";
+
+service PaxosService {
+    rpc Prepare(PrepareRequest) returns (PrepareResponse);
+	rpc Promise(PromiseRequest) returns (PromiseResponse);
+    rpc Accept(AcceptRequest) returns (AcceptResponse);
+	rpc Accepted(AcceptedRequest) returns (AcceptedResponse);
+}
+
+// Structures
+message TransactionLeases {
+    repeated Lease leases = 1;
+}
+
+message Lease {
+	string key = 1;
+	int32 epoch = 2;
+	int32 targetTMId = 3;
+}
+// ------------------------------
+
+// Prepare
+message PrepareRequest {
+	int32 epoch = 1;
+}
+
+message PrepareResponse {
+	bool ok = 1;
+}
+// ------------------------------
+
+// Promise
+message PromiseRequest {
+	int32 epoch = 1;
+	TransactionLeases leases = 2;
+}
+
+message PromiseResponse {
+	bool ok = 1;
+}
+// ------------------------------
+
+// Accept
+message AcceptRequest {
+	int32 epoch = 1;
+	TransactionLeases leases = 2;
+}
+
+message AcceptResponse {
+	bool ok = 1;
+}
+// ------------------------------
+
+// Accepted
+message AcceptedRequest {
+	int32 epoch = 1;
+	TransactionLeases leases = 2;
+}
+
+message AcceptedResponse {
+	bool ok = 1;
+}
+// ------------------------------
