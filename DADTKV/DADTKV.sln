@@ -3,16 +3,18 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34024.191
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DADTKV", "DADTKV\DADTKV.csproj", "{F3502582-8333-47C7-8A9F-2182BF584BD7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DADTKV", "DADTKV\DADTKV.csproj", "{F3502582-8333-47C7-8A9F-2182BF584BD7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{00D743D5-AB57-4BD8-9D81-69284B401E9D}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TransactionManager", "TransactionManager\TransactionManager.csproj", "{754A715F-5B7F-4FD4-A2E2-4D927FFD489F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TransactionManager", "TransactionManager\TransactionManager.csproj", "{754A715F-5B7F-4FD4-A2E2-4D927FFD489F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LeaseManager", "LeaseManager\LeaseManager.csproj", "{6C149C9A-EF13-446A-96FB-90AE5C307207}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LeaseManager", "LeaseManager\LeaseManager.csproj", "{6C149C9A-EF13-446A-96FB-90AE5C307207}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Parser", "ConfigParser\Parser.csproj", "{D5C69CEE-A55A-43DD-8F2E-6B38599EE03D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -32,6 +34,10 @@ Global
 		{6C149C9A-EF13-446A-96FB-90AE5C307207}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6C149C9A-EF13-446A-96FB-90AE5C307207}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6C149C9A-EF13-446A-96FB-90AE5C307207}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5C69CEE-A55A-43DD-8F2E-6B38599EE03D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5C69CEE-A55A-43DD-8F2E-6B38599EE03D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5C69CEE-A55A-43DD-8F2E-6B38599EE03D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5C69CEE-A55A-43DD-8F2E-6B38599EE03D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
