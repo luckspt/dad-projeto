@@ -7,24 +7,24 @@ using System.Threading.Tasks;
 
 namespace Parser.Parsers
 {
-    public struct TimeSlotConfigLine : ConfigLine
+    public struct WaitConfigLine : ConfigLine
     {
         public int Time;
     }
 
-    internal class TimeSlotParser : Parser
+    internal class WaitParser : Parser
     {
-        private Regex regex = new Regex(@"^D (\d+) *$", RegexOptions.Compiled);
+        private Regex regex = new Regex(@"^W (\d+) *$", RegexOptions.Compiled);
         public Tuple<ConfigType, ConfigLine>? Result(string line)
         {
             Match match = this.regex.Match(line);
             if (!match.Success) return null;
 
             return new Tuple<ConfigType, ConfigLine>(
-                ConfigType.TimeSlot,
-                new TimeConfigLine
+                ConfigType.Wait,
+                new WaitConfigLine
                 {
-                    Time = int.Parse(match.Groups[1].Value),
+                    Time = int.Parse(match.Groups[1].Value)
                 }
             );
         }

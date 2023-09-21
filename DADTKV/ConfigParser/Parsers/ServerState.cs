@@ -22,8 +22,8 @@ namespace Parser.Parsers
 
     internal class ServerStateParser : Parser
     {
-        private Regex regex = new Regex(@"^F (\d+) (([NC] )+)((\(\w+,\w+\) *)+) *$");
-        private Regex suspectedRegex = new Regex(@"(\w+),(\w+)");
+        private Regex regex = new Regex(@"^F (\d+) (([NC] )+)((\(\w+,\w+\) *)+) *$", RegexOptions.Compiled);
+        private Regex suspectedRegex = new Regex(@"(\w+),(\w+)", RegexOptions.Compiled);
         public Tuple<ConfigType, ConfigLine>? Result(string line)
         {
             Match match = this.regex.Match(line);

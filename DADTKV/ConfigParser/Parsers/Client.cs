@@ -15,7 +15,7 @@ namespace Parser.Parsers
 
     internal class ClientParser : Parser
     {
-        private Regex regex = new Regex(@"^P (\w+) C (.+) *$");
+        private Regex regex = new Regex(@"^P (\w+) C (.+) *$", RegexOptions.Compiled);
         public Tuple<ConfigType, ConfigLine>? Result(string line)
         {
             Match match = this.regex.Match(line);

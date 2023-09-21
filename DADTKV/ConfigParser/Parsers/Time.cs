@@ -14,7 +14,7 @@ namespace Parser.Parsers
 
     internal class TimeParser : Parser
     {
-        private Regex regex = new Regex(@"^S (\d+) *$");
+        private Regex regex = new Regex(@"^S (\d+) *$", RegexOptions.Compiled);
         public Tuple<ConfigType, ConfigLine>? Result(string line)
         {
             Match match = this.regex.Match(line);

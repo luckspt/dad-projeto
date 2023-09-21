@@ -14,7 +14,7 @@ namespace Parser.Parsers
 
     internal class StartTimeParser : Parser
     {
-        private Regex regex = new Regex(@"^T (\d{1,2}:\d{1,2}:\d{1,2}) *$");
+        private Regex regex = new Regex(@"^T (\d{1,2}:\d{1,2}:\d{1,2}) *$", RegexOptions.Compiled);
         public Tuple<ConfigType, ConfigLine>? Result(string line)
         {
             Match match = this.regex.Match(line);

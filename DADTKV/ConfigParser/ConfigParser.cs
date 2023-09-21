@@ -15,7 +15,11 @@ namespace Parser
         // Time slot (D)
         TimeSlot,
         // Server State (F)
-        ServerState
+        ServerState,
+        // Client: ReadriteSet (T)
+        ReadWriteSet,
+        // Client: Wait (W)
+        Wait,
     }
 
     public interface ConfigLine {
@@ -34,7 +38,7 @@ namespace Parser
 
         private Dictionary<ConfigType, List<ConfigLine>> Config { get; }
 
-        public ConfigParser(string path) : this(path, new List<Parser>() { new ClientParser(), new ServerParser(), new ServerStateParser(), new StartTimeParser(), new TimeParser(), new TimeSlotParser()}, "#")
+        public ConfigParser(string path) : this(path, new List<Parser>() { new ClientParser(), new ServerParser(), new ServerStateParser(), new StartTimeParser(), new TimeParser(), new TimeSlotParser(), new ReadWriteSetParser(), new WaitParser()}, "#")
         {}
 
         public ConfigParser(string path, List<Parser> parsers) : this(path, parsers, "#")
@@ -61,10 +65,12 @@ namespace Parser
                     // Parse line
                     try
                     {
-                        var configLine = this.parsers
-                            .Where(p => p.Result(line) != null)
-                            .Select(p => p.Result(line))
-                            .First();
+                        Tuple<ConfigType, ConfigLine> configLine = null;
+                        foreach (Parser parser in this.parsers)
+                        {
+                            configLine = parser.Result(line);
+                            if (configLine != null) break;
+                        }
 
                         if (configLine == null) continue;
 

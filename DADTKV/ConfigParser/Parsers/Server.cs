@@ -22,7 +22,7 @@ namespace Parser.Parsers
 
     internal class ServerParser : Parser
     {
-        private Regex regex = new Regex(@"^P (\w+) (T|L) (http:\/\/(\d{1,3}.){3}\d{1,3}:\d{1,5}) *$");
+        private Regex regex = new Regex(@"^P (\w+) (T|L) (http:\/\/(\d{1,3}.){3}\d{1,3}:\d{1,5}) *$", RegexOptions.Compiled);
         public Tuple<ConfigType, ConfigLine>? Result(string line)
         {
             Match match = this.regex.Match(line);
