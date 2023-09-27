@@ -19,6 +19,7 @@
 
 	<Protobuf Include="protos\Paxos.proto" GrpcServices="Server" />
 	<Protobuf Include="protos\Paxos.proto" GrpcServices="Client" />
+	<Protobuf Include="protos\LeaseUpdates.proto" GrpcServices="Client" />
   </ItemGroup>
 
 </Project>

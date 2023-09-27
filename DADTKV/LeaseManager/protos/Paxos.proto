@@ -8,10 +8,6 @@ service PaxosService {
 }
 
 // Structures
-message TransactionLeases {
-    repeated Lease leases = 1;
-}
-
 message Lease {
 	string key = 1;
 	int32 epoch = 2;
@@ -32,7 +28,7 @@ message PrepareResponse {
 // Promise
 message PromiseRequest {
 	int32 epoch = 1;
-	TransactionLeases leases = 2;
+	repeated Lease leases = 2;
 }
 
 message PromiseResponse {
@@ -43,7 +39,7 @@ message PromiseResponse {
 // Accept
 message AcceptRequest {
 	int32 epoch = 1;
-	TransactionLeases leases = 2;
+	repeated Lease leases = 2;
 }
 
 message AcceptResponse {
@@ -54,7 +50,7 @@ message AcceptResponse {
 // Accepted
 message AcceptedRequest {
 	int32 epoch = 1;
-	TransactionLeases leases = 2;
+	repeated Lease leases = 2;
 }
 
 message AcceptedResponse {

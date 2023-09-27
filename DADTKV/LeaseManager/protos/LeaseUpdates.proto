@@ -1,0 +1,26 @@
+﻿syntax = "proto3";
+
+service LeaseUpdatesService {
+	rpc LeaseUpdate(LeaseUpdateRequest) returns (LeaseUpdateResponse);
+}
+
+// Structures
+message Lease {
+	string key = 1;
+	// TODO: is epoch even needed?
+	// -- Because TMs *don't* have a notion of epochs
+	int32 epoch = 2;
+	int32 previousOwner = 3;
+}
+// ------------------------------
+
+// Sending out updates
+message LeaseUpdateRequest {
+	repeated Lease leases = 1;
+	repeated Lease leasesToRelease = 2;
+}
+
+message LeaseUpdateResponse {
+	bool ok = 1;
+}
+// ------------------------------

@@ -31,7 +31,6 @@ namespace Parser.Parsers
                     WriteDict = writeSetRegex.Matches(match.Groups[2].Value)
                     .Select(s => writeSetRegex.Match(s.Value))
                     .ToDictionary(m => m.Groups[1].Value,m => int.Parse(m.Groups[2].Value))
-                    // The dict is: <"name1",10>,<"name2",20>
                 }
             );
         }

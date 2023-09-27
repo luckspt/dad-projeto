@@ -1,0 +1,16 @@
+﻿syntax = "proto3";
+
+service LeaseRequestingService {
+	rpc RequestLease(RequestLeasesRequest) returns (RequestLeasesResponse);
+}
+
+// Requesting
+message RequestLeasesRequest {
+	repeated string keys = 1;
+	int32 targetTMId = 2;
+}
+
+message RequestLeasesResponse {
+	bool ok = 1;
+}
+// ------------------------------
