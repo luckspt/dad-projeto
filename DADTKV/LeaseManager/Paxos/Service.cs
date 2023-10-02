@@ -40,6 +40,8 @@ namespace LeaseManager.Paxos
             this.phase2 = phase2;
         }
 
+        // TODO: do the functions return have to be a Task?
+
         #region Phase 1
         public override PrepareResponse Prepare(PrepareRequest request, CallOptions options)
         {

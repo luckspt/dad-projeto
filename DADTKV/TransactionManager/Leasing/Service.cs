@@ -7,7 +7,12 @@ using System.Threading.Tasks;
 
 namespace LeaseManager.Paxos
 {
-    internal class LeaseDTO
+    internal class LeaseRequestingDTO
+    {
+
+    }
+
+    internal class LeaseUpdateDTO
     {
         static public List<Lease> fromProtobuf(TransactionLeases leases)
         {

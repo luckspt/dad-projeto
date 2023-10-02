@@ -14,10 +14,10 @@ namespace LeaseManager.Paxos
 
     internal class Phase1
     {
-        private Paxos paxos;
+        private PaxosInstance paxos;
         private Promises promises;
 
-        public Phase1(Paxos paxos)
+        public Phase1(PaxosInstance paxos)
         {
             this.paxos = paxos;
             this.promises = new Promises { greatestWriteEpoch = 0, receivedCount = 0 };
@@ -38,7 +38,7 @@ namespace LeaseManager.Paxos
             return true;
         }
 
-        public bool Promise(int epoch, List<Lease> leases)
+        public bool Promise(int epoch, Dictionary<string, List<string>> leases)
         {
             this.promises.receivedCount++;
 

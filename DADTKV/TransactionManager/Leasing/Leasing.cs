@@ -10,38 +10,77 @@ namespace TransactionManager.Leasing
     {
         // The id of this transaction manager
         private string managerId;
-        // The keys that are currently leased to this transaction manager
-        private HashSet<string> leases;
+        // The keys and a queue of transaction managers that hold a lease
+        private Dictionary<string, List<string>> leases;
 
         public Leasing(string managerId)
         {
             this.managerId = managerId;
-            leases = new HashSet<string>();
+            leases = new Dictionary<string, List<string>>();
         }
 
-        public bool hasLease(string key)
+        public bool HasToFree(string key)
         {
-            return leases.Contains(key);
+            // contract programming, so requires this.hasLease(key)
+            return leases[key].Count > 1;
+        }
+
+        public bool HasLease(string key)
+        {
+            return leases.ContainsKey(key) &&
+                leases[key][0].Equals(this.managerId);
+        }
+
+        public bool HasLeases(List<string> keys)
+        {
+            return keys.All(key => this.hasLease(key));
         }
 
         public bool Request(List<string> keys)
         {
             // TODO: implement
-            // TODO: request keys that are not leased already to the manager from ALL lease managers
+            // TODO: contract programming, so no need to validate if we already have the keys
+            // TODO: request to ALL lease managers; need to add a uid because of broadcast?
             return true;
         }
 
-        public bool Receive(List<string> newKeys)
+        public bool Update(Dictionary<string, List<string>> newKeys)
         {
-            leases.Concat(newKeys);
+            // Updates are received asynchronously, so better to lock it
+            lock (this)
+            {
+                foreach (string key in newKeys.Keys)
+                {
+                    // TODO: should we copy or just reference?
+                    if (leases.ContainsKey(key))
+                    {
+                        leases[key].AddRange(newKeys[key]);
+                    }
+                    else
+                    {
+                        leases.Add(key, newKeys[key]);
+                    }
+                }
+            }
+
             return true;
         }
 
         public void Free(List<string> keys)
         {
             // TODO: implement
-            // TODO: if it holds a lease that coflicts with another transaction manager, free it after executing the transaction.
+            // TODO: if it holds a lease that conflicts with another transaction manager, free it after executing the transaction.
             // - otherwise, it can keep it indefinitely
+            lock (this)
+            {
+                foreach (string key in keys)
+                {
+                    if (leases.ContainsKey(key))
+                    {
+                        leases[key].Remove(this.managerId);
+                    }
+                }
+            }
         }
     }
 }

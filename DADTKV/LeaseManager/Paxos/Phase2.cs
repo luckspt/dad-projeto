@@ -8,16 +8,16 @@ namespace LeaseManager.Paxos
 {
     internal class Phase2
     {
-        private Paxos paxos;
+        private PaxosInstance paxos;
         private int acceptedCount;
 
-        public Phase2 (Paxos paxos)
+        public Phase2 (PaxosInstance paxos)
         {
             this.paxos = paxos;
             this.acceptedCount = 0;
         }
 
-        public bool Accept(int epoch, List<Lease> leases)
+        public bool Accept(int epoch, Dictionary<string, List<string>> leases)
         {
             // We only accept if the epoch is the same as the one we have promised
             if (this.paxos.ReadTimestamp != epoch)
@@ -34,7 +34,7 @@ namespace LeaseManager.Paxos
             return true;
         }
 
-        public bool Accepted(int epoch, List<Lease> leases)
+        public bool Accepted(int epoch, Dictionary<string, List<string>> leases)
         {
             this.acceptedCount++;
 
