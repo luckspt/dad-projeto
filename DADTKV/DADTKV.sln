@@ -14,7 +14,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TransactionManager", "Trans
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LeaseManager", "LeaseManager\LeaseManager.csproj", "{6C149C9A-EF13-446A-96FB-90AE5C307207}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Parser", "ConfigParser\Parser.csproj", "{D5C69CEE-A55A-43DD-8F2E-6B38599EE03D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Parser", "ConfigParser\Parser.csproj", "{D5C69CEE-A55A-43DD-8F2E-6B38599EE03D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Manager", "Manager\Manager.csproj", "{D175579B-C5D8-44E1-A527-E4B8E59732CD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -38,6 +40,10 @@ Global
 		{D5C69CEE-A55A-43DD-8F2E-6B38599EE03D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D5C69CEE-A55A-43DD-8F2E-6B38599EE03D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D5C69CEE-A55A-43DD-8F2E-6B38599EE03D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D175579B-C5D8-44E1-A527-E4B8E59732CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D175579B-C5D8-44E1-A527-E4B8E59732CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D175579B-C5D8-44E1-A527-E4B8E59732CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D175579B-C5D8-44E1-A527-E4B8E59732CD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
