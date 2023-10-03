@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Manager
 {
-    internal class Pair<F, S>
+    public class Pair<F, S>
     {
         public F First;
         public S Second;

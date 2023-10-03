@@ -21,5 +21,18 @@ namespace Manager.StatusHook
         {
             return Task.FromResult(new ExecuteResponse() { Ok = statusHook.Execute(request.Id, request.Type, request.Status) });
         }
+
+        public void StartServer(string hostname = "localhost", int port = 8000)
+        {
+            ServerPort serverPort = new ServerPort(hostname, port, ServerCredentials.Insecure);
+            Server server = new Server
+            {
+                Services = { global::ManagerStatusHook.BindService(this) },
+                Ports = { serverPort }
+            };
+
+            server.Start();
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+        }
     }
 }

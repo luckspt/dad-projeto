@@ -10,6 +10,8 @@ namespace Manager
         public static readonly Color NotStarted = Color.Gray;
         public static readonly Color Idle = Color.Yellow;
         public static readonly Color SendingRequests = Color.Green;
+
+        public static readonly string[] Statuses = new string[] { "NotStarted", "Idle", "SendingRequests" };
     }
 
     class TMStatus
@@ -19,6 +21,8 @@ namespace Manager
         public static readonly Color Crashed = Color.Red;
         public static readonly Color ExecutingTransaction = Color.LightGreen;
         public static readonly Color CommitingTransaction = Color.DarkGreen;
+
+        public static readonly string[] Statuses = new string[] { "NotStarted", "Idle", "Crashed", "ExecutingTransaction", "CommitingTransaction" };
     }
 
     class LMStatus
@@ -28,29 +32,38 @@ namespace Manager
         public static readonly Color Crashed = Color.Red;
         public static readonly Color PaxosProposer = Color.LightGreen;
         public static readonly Color PaxosAcceptor = Color.DarkGreen;
+
+        public static readonly string[] Statuses = new string[] { "NotStarted", "Idle", "Crashed", "PaxosProposer", "PaxosAcceptor" };
     }
 
     public partial class Main : Form
     {
+        public static List<Pair<ClientConfigLine, Color>> Clients { get; private set; }
+        public static List<Pair<ServerConfigLine, Color>> TransactionManagers { get; private set; }
+        public static List<Pair<ServerConfigLine, Color>> LeaseManagers { get; private set; }
+
         private ConfigParser config = null;
-        private List<Pair<ClientConfigLine, Color>> clients = null;
-        private List<Pair<ServerConfigLine, Color>> transactionManagers = null;
-        private List<Pair<ServerConfigLine, Color>> leaseManagers = null;
         private System.Threading.Timer processTimer = null;
 
         public Main()
         {
             InitializeComponent();
+            Main.Clients = new List<Pair<ClientConfigLine, Color>>();
+            Main.TransactionManagers = new List<Pair<ServerConfigLine, Color>>();
+            Main.LeaseManagers = new List<Pair<ServerConfigLine, Color>>();
         }
 
         private void updateStatuses(object state)
         {
+            // Performance could be improved by only updating the items that changed when they changed
+            // But this works fine for the time being
+
             // Clients
             this.lsvwClients.BeginUpdate();
-            if (this.lsvwClients.Items.Count != this.clients.Count)
+            if (this.lsvwClients.Items.Count != Main.Clients.Count)
             {
                 this.lsvwClients.Items.Clear();
-                this.lsvwClients.Items.AddRange(this.clients.Select(client => new ListViewItem()
+                this.lsvwClients.Items.AddRange(Main.Clients.Select(client => new ListViewItem()
                 {
                     Text = client.First.ID,
                     ToolTipText = client.First.ScriptPath,
@@ -61,17 +74,17 @@ namespace Manager
             {
                 for (int i = 0; i < this.lsvwClients.Items.Count; i++)
                 {
-                    this.lsvwClients.Items[i].BackColor = this.clients[i].Second;
+                    this.lsvwClients.Items[i].BackColor = Main.Clients[i].Second;
                 }
             }
             this.lsvwClients.EndUpdate();
 
             // TMs
             this.lsvwTMs.BeginUpdate();
-            if (this.lsvwTMs.Items.Count != this.transactionManagers.Count)
+            if (this.lsvwTMs.Items.Count != Main.TransactionManagers.Count)
             {
                 this.lsvwTMs.Items.Clear();
-                this.lsvwTMs.Items.AddRange(transactionManagers.Select(server => new ListViewItem()
+                this.lsvwTMs.Items.AddRange(TransactionManagers.Select(server => new ListViewItem()
                 {
                     Text = server.First.ID,
                     ToolTipText = server.First.Url,
@@ -82,17 +95,17 @@ namespace Manager
             {
                 for (int i = 0; i < this.lsvwTMs.Items.Count; i++)
                 {
-                    this.lsvwTMs.Items[i].BackColor = this.transactionManagers[i].Second;
+                    this.lsvwTMs.Items[i].BackColor = Main.TransactionManagers[i].Second;
                 }
             }
             this.lsvwTMs.EndUpdate();
 
             // LMs
             this.lsvwLMs.BeginUpdate();
-            if (this.lsvwLMs.Items.Count != this.leaseManagers.Count)
+            if (this.lsvwLMs.Items.Count != Main.LeaseManagers.Count)
             {
                 this.lsvwLMs.Items.Clear();
-                this.lsvwLMs.Items.AddRange(this.leaseManagers.Select(server => new ListViewItem()
+                this.lsvwLMs.Items.AddRange(Main.LeaseManagers.Select(server => new ListViewItem()
                 {
                     Text = server.First.ID,
                     ToolTipText = server.First.Url,
@@ -103,7 +116,7 @@ namespace Manager
             {
                 for (int i = 0; i < this.lsvwLMs.Items.Count; i++)
                 {
-                    this.lsvwLMs.Items[i].BackColor = this.leaseManagers[i].Second;
+                    this.lsvwLMs.Items[i].BackColor = Main.LeaseManagers[i].Second;
                 }
             }
             this.lsvwLMs.EndUpdate();
@@ -113,10 +126,11 @@ namespace Manager
         {
             // Set labels
             this.lblClientsLabel.Text = "Gray = Not Started\nYellow = Idle\nGreen = Sending requests";
-            this.lblTMsLabel.Text = "Gray = Not Started\nYellow = Idle (waiting for a lease)\nRed = Crashed\nGreen = Executing transaction";
-            this.lblLMsLabel.Text = "Gray = Not Started\nYellow = Idle\nRed = Crashed";
+            this.lblTMsLabel.Text = "Gray = Not Started\nYellow = Idle (waiting for a lease)\nRed = Crashed\nLight Green = Executing transaction\nDark Green = Commiting Transaction";
+            this.lblLMsLabel.Text = "Gray = Not Started\nYellow = Idle\nRed = Crashed\nLight Green = Paxos Proposer\nDark Green = Paxos Acceptor";
 
             this.fdConfig.Title = "Select the configuration file";
+            this.fdConfig.FileName = "config.txt"; // Default name
             this.fdConfig.ShowDialog();
         }
 
@@ -139,19 +153,28 @@ namespace Manager
             this.config = new ConfigParser(configFilePath);
             this.config.Parse();
 
-            this.clients = this.config.Config[ConfigType.Client]
-                .Select(x => new Pair<ClientConfigLine, Color>((ClientConfigLine)x, ClientStatus.NotStarted))
-                .ToList();
+            lock (Main.Clients)
+            {
+                Main.Clients = this.config.Config[ConfigType.Client]
+                    .Select(x => new Pair<ClientConfigLine, Color>((ClientConfigLine)x, ClientStatus.NotStarted))
+                    .ToList();
+            }
 
-            this.transactionManagers = this.config.Config[ConfigType.Server]
-                .Select(x => new Pair<ServerConfigLine, Color>((ServerConfigLine)x, TMStatus.NotStarted))
-                               .Where(server => server.First.Type == ServerType.TransactionManager)
-                               .ToList();
+            lock (Main.TransactionManagers)
+            {
+                Main.TransactionManagers = this.config.Config[ConfigType.Server]
+                    .Select(x => new Pair<ServerConfigLine, Color>((ServerConfigLine)x, TMStatus.NotStarted))
+                                   .Where(server => server.First.Type == ServerType.TransactionManager)
+                                   .ToList();
+            }
 
-            this.leaseManagers = this.config.Config[ConfigType.Server]
-                .Select(x => new Pair<ServerConfigLine, Color>((ServerConfigLine)x, LMStatus.NotStarted))
-                            .Where(server => server.First.Type == ServerType.LeaseManager)
-                            .ToList();
+            lock (Main.LeaseManagers)
+            {
+                Main.LeaseManagers = this.config.Config[ConfigType.Server]
+                    .Select(x => new Pair<ServerConfigLine, Color>((ServerConfigLine)x, LMStatus.NotStarted))
+                                .Where(server => server.First.Type == ServerType.LeaseManager)
+                                .ToList();
+            }
 
             this.startProcessMonitoring();
             this.startProcesses();
@@ -172,7 +195,7 @@ namespace Manager
             string solutionDirectory = this.getSolutionDirectory();
 
             // Start LMs
-            foreach (Pair<ServerConfigLine, Color> lm in this.leaseManagers)
+            foreach (Pair<ServerConfigLine, Color> lm in Main.LeaseManagers)
                 Process.Start(solutionDirectory + "/LeaseManager/bin/Debug/net6.0/LeaseManager.exe");
 
             // Start TMs
