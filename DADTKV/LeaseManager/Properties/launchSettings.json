@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "LeaseManager": {
+      "commandName": "Project",
+      "commandLineArgs": "http://localhost:9999 LM2 http://127.0.0.1:10008"
+    }
+  }
+}

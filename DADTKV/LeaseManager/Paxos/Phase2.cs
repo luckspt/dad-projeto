@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace LeaseManager.Paxos
 {
-    internal class Phase2
+    public class Phase2
     {
         private PaxosInstance paxos;
         private int acceptedCount;
 
-        public Phase2 (PaxosInstance paxos)
+        public Phase2(PaxosInstance paxos)
         {
             this.paxos = paxos;
             this.acceptedCount = 0;

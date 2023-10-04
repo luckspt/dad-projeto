@@ -36,7 +36,7 @@ namespace Parser
         private string CommentChars { get; }
         private List<Parser> parsers;
 
-        private Dictionary<ConfigType, List<ConfigLine>> Config { get; }
+        public Dictionary<ConfigType, List<ConfigLine>> Config { get; }
 
         // TODO: add status
         public ConfigParser(string path) : this(path, new List<Parser>() { new ClientParser(), new ServerParser(), new ServerStateParser(), new StartTimeParser(), new TimeParser(), new TimeSlotParser(), new ReadWriteSetParser(), new WaitParser()}, "#")

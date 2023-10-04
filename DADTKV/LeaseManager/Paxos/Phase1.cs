@@ -12,7 +12,7 @@ namespace LeaseManager.Paxos
         public int receivedCount;
     }
 
-    internal class Phase1
+    public class Phase1
     {
         private PaxosInstance paxos;
         private Promises promises;

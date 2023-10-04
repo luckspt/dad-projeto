@@ -16,14 +16,23 @@ namespace LeaseManager
         public LeaseManager(string id)
         {
             this.leaseBuffer = new LeaseBuffer();
+            Timer timer = new Timer(this.StartPaxos, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
         }
 
-        public void StartPaxos()
+        public void StartPaxos(object state)
         {
             lock (this.leaseBuffer)
             {
-                PaxosInstance instance = new PaxosInstance(this.id, this.leaseBuffer.GetBuffer(), 0, 0);
-                
+                try
+                {
+                    PaxosInstance instance = new PaxosInstance(this.id, this.leaseBuffer.GetBuffer(), 0, 0);
+                    this.leaseBuffer.Clear();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+
             }
 
         }

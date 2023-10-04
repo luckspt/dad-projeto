@@ -1,0 +1,21 @@
+﻿syntax = "proto3";
+
+service ManagerStatusHook {
+    rpc Execute(ExecuteRequest) returns (ExecuteResponse);
+}
+
+enum EntityType {
+    LeaseManager = 0;
+    TransactionManager = 1;
+    Client = 2;
+}
+
+message ExecuteRequest {
+    string id = 1;
+    EntityType type = 2;
+    string status = 3;
+}
+
+message ExecuteResponse {
+    bool ok = 1;
+}

@@ -46,6 +46,7 @@ namespace TransactionManager.Leasing
 
         public bool Update(Dictionary<string, List<string>> newKeys)
         {
+            // TODO: check and free lease if needed
             // Updates are received asynchronously, so better to lock it
             lock (this)
             {
