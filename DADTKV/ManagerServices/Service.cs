@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LeaseManager.Manager
+namespace ManagerServices
 {
     internal class Service : ManagerService.ManagerServiceBase
     {

@@ -4,25 +4,31 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LeaseManager.Manager
+namespace ManagerServices
 {
-    struct HookConfig
+    internal class ManagerServer
     {
-        public bool Enabled;
-        public int HookIntervalMs;
-    }
+        private Timer? hookTimer = null;
 
-    internal class ManagerLogic
-    {
-        private HookConfig hookConfig;
-        private Timer hookTimer;
+        public bool Crash()
+        {
+            // Suicide the process to emulate a crash
+            Environment.Exit(1);
+            return true;
+        }
+
+        public bool CommunicationDelay(int delayMsPerRequest)
+        {
+            // TODO: implement
+            // Maybe use interceptors (that sleep and block the thread)
+            //  and store the delayMsPerRequest in a centralized place
+            return false;
+        }
 
         public bool StatusHookConfig(bool enabled, int hookIntervalMs)
         {
             lock (this)
             {
-                this.hookConfig = new HookConfig { Enabled = enabled, HookIntervalMs = hookIntervalMs };
-
                 if (!enabled)
                 {
                     this.hookTimer?.Dispose();
@@ -40,9 +46,11 @@ namespace LeaseManager.Manager
 
         }
 
-        public void ExecuteHook(object state)
+        private void ExecuteHook(object state)
         {
             // TODO call status rpc
+            // Get status of instance and send to hook
         }
     }
+
 }

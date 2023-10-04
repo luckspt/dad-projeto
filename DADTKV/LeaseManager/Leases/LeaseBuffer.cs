@@ -17,19 +17,22 @@ namespace LeaseManager.Leases
 
         public bool AddRange(string managerId, List<string> keys)
         {
-            foreach (string key in keys)
+            lock (this)
             {
-                if (this.buffer.ContainsKey(key))
+                foreach (string key in keys)
                 {
-                    // https://stackoverflow.com/a/12172412
-                    int idx = this.buffer[key].BinarySearch(managerId);
-                    if (idx < 0) idx = ~idx;
+                    if (this.buffer.ContainsKey(key))
+                    {
+                        // https://stackoverflow.com/a/12172412
+                        int idx = this.buffer[key].BinarySearch(managerId);
+                        if (idx < 0) idx = ~idx;
 
-                    this.buffer[key].Insert(idx, managerId);
-                }
-                else
-                {
-                    this.buffer.Add(key, new List<string> { managerId });
+                        this.buffer[key].Insert(idx, managerId);
+                    }
+                    else
+                    {
+                        this.buffer.Add(key, new List<string> { managerId });
+                    }
                 }
             }
 
