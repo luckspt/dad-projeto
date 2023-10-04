@@ -1,6 +1,6 @@
-﻿using Grpc.Core;
+﻿using Common;
+using Grpc.Core;
 using Grpc.Net.Client;
-using ManagerServices;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,22 +27,19 @@ namespace ManagerClientServices
             }
         }
 
-        public ManagerClient(string entityId, EntityType entityType, string hostname = "localhost", int port = 9999, bool insecure = true)
+        public ManagerClient(HostPort managerAddress, string entityId, EntityType entityType)
         {
             this.entityId = entityId;
             this.entityType = entityType;
-            this.status = "NotStarted";
+            this.status = "Idle";
 
-            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", insecure);
-            string protocol = insecure ? "http" : "https";
-
-            GrpcChannel serverChannel = GrpcChannel.ForAddress($"{protocol}://{hostname}:{port}");
+            GrpcChannel serverChannel = GrpcChannel.ForAddress(managerAddress.ToString());
             this.client = new ManagerStatusHook.ManagerStatusHookClient(serverChannel);
         }
 
         public void ExecuteHook(object state)
         {
-            this.client.ExecuteAsync(new ExecuteRequest()
+            this.client.Execute(new ExecuteRequest()
             {
                 Id = this.entityId,
                 Type = this.entityType,

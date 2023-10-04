@@ -7,14 +7,15 @@ using System.Threading.Tasks;
 
 namespace ManagerClientServices
 {
-    public class ServerLogic
+    public class ManagerServiceLogic
     {
         private Timer? hookTimer = null;
         private ManagerClient hookClient;
 
-        public ServerLogic(ManagerClient hookClient)
+        public ManagerServiceLogic(ManagerClient hookClient)
         {
             this.hookClient = hookClient;
+            this.StatusHookConfig(true, 1000);
         }
 
         public bool Crash()

@@ -16,7 +16,7 @@ namespace LeaseManager
         public LeaseManager(string id)
         {
             this.leaseBuffer = new LeaseBuffer();
-            Timer timer = new Timer(this.StartPaxos, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+            Timer timer = new Timer(this.StartPaxos, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
         }
 
         public void StartPaxos(object state)

@@ -12,7 +12,16 @@ namespace Manager.Manager
     {
         public void Crash(string address)
         {
-            this.GetClient(address).Crash(new CrashRequest());
+            try
+            {
+                this.GetClient(address).Crash(new CrashRequest());
+            }
+            catch (RpcException e)
+            {
+                if (e.InnerException.InnerException.Message.Contains("aborted"))
+                    ; // ignore, intended behaviour
+                else throw;
+            }
         }
 
         public void CommunicationDelay(string address, int delayMs)

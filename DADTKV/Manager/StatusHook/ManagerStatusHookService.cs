@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 
 namespace Manager.StatusHook
 {
-    internal class ServerService : global::ManagerStatusHook.ManagerStatusHookBase
+    internal class ManagerStatusHookService : global::ManagerStatusHook.ManagerStatusHookBase
     {
-        private ServerLogic serverLogic;
+        private ManagerStatusHookServiceLogic serverLogic;
 
-        public ServerService(ServerLogic serverLogic)
+        public ManagerStatusHookService(ManagerStatusHookServiceLogic serverLogic)
         {
             this.serverLogic = serverLogic;
         }

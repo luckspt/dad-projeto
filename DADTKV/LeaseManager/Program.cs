@@ -1,34 +1,41 @@
 ﻿using Grpc.Core;
-using ManagerClientServices;
+using Common;
+using System.Text.RegularExpressions;
 
 namespace Manager
 {
     internal static class Program
     {
-        public static Server grpcServer { get; private set; }
+        public static Server GrpcServer { get; private set; }
         public static ManagerClientServices.ManagerClient ManagerClient { get; private set; }
 
         /// <summary>
-        ///  The main entry point for the application.
+        /// Application entrypoint
         /// </summary>
-        static void Main()
+        /// <param name="args">string[] { managerAddress, entityId, entityAddress}</param>
+        static void Main(string[] args)
         {
             // Start the GRPC server with all the services
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
             // TODO receive this in args
-            Program.ManagerClient = new ManagerClientServices.ManagerClient("lm1", EntityType.LeaseManager);
+            Program.ManagerClient = new ManagerClientServices.ManagerClient(HostPort.FromString(args[0]), args[1], EntityType.LeaseManager);
 
-            ServerPort serverPort = new ServerPort("localhost", 9999, ServerCredentials.Insecure);
-            Program.grpcServer = new Server
+            // Set server port
+            HostPort hostPort = HostPort.FromString(args[2]);
+            ServerPort serverPort = new ServerPort("0.0.0.0", hostPort.Port, ServerCredentials.Insecure);
+            Program.GrpcServer = new Server
             {
                 Services = {
-                    ManagerService.BindService(new ManagerClientServices.ServerService(new ManagerClientServices.ServerLogic(Program.ManagerClient))),
+                    ManagerService.BindService(new ManagerClientServices.ManagerService(new ManagerClientServices.ManagerServiceLogic(Program.ManagerClient))),
                 },
                 Ports = { serverPort }
             };
 
-            grpcServer.Start();
+            Program.GrpcServer.Start();
+
+            // Simulate work - TODO remove
+            Program.GrpcServer.ShutdownTask.Wait();
         }
     }
 }

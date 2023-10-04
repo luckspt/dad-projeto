@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 
 namespace ManagerClientServices
 {
-    public class ServerService : ManagerService.ManagerServiceBase
+    public class ManagerService : global::ManagerService.ManagerServiceBase
     {
-        private ServerLogic serverLogic;
-        public ServerService(ServerLogic serverLogic)
+        private ManagerServiceLogic serverLogic;
+        public ManagerService(ManagerServiceLogic serverLogic)
         {
             this.serverLogic = serverLogic;
         }

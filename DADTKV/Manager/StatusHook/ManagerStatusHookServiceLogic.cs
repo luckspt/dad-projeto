@@ -8,10 +8,12 @@ using System.Threading.Tasks;
 
 namespace Manager.StatusHook
 {
-    internal class ServerLogic
+    internal class ManagerStatusHookServiceLogic
     {
         public bool Execute(string id, EntityType type, string status)
         {
+            // TODO: use this as heartbeat to figure out if a client is dead?
+
             switch (type)
             {
                 case EntityType.Client:
@@ -21,15 +23,13 @@ namespace Manager.StatusHook
                         if (!ClientStatus.Statuses.Contains(status))
                             return false;
 
-                        Pair<ClientConfigLine, Color> client = Main.Clients.Find(client => client.First.ID == id)!;
+                        Pair<ClientConfigLine, EntityStatus> client = Main.Clients.Find(client => client.First.ID == id)!;
                         if (client == null)
                             return false;
 
-                        client.Second = typeof(ClientStatus).GetPropertyValue<Color>(status);
+                        client.Second.Status = typeof(ClientStatus).GetPropertyValue<Color>(status);
                         return true;
                     }
-
-                    break;
                 case EntityType.TransactionManager:
                     lock (Main.TransactionManagers)
                     {
@@ -37,14 +37,13 @@ namespace Manager.StatusHook
                         if (!TMStatus.Statuses.Contains(status))
                             return false;
 
-                        Pair<ServerConfigLine, Color> tm = Main.TransactionManagers.Find(tm => tm.First.ID == id)!;
+                        Pair<ServerConfigLine, EntityStatus> tm = Main.TransactionManagers.Find(tm => tm.First.ID == id)!;
                         if (tm == null)
                             return false;
 
-                        tm.Second = typeof(TMStatus).GetPropertyValue<Color>(status);
+                        tm.Second.Status = typeof(TMStatus).GetPropertyValue<Color>(status);
                         return true;
                     }
-                    break;
                 case EntityType.LeaseManager:
                     lock (Main.LeaseManagers)
                     {
@@ -52,14 +51,13 @@ namespace Manager.StatusHook
                         if (!LMStatus.Statuses.Contains(status))
                             return false;
 
-                        Pair<ServerConfigLine, Color> lm = Main.LeaseManagers.Find(lm => lm.First.ID == id)!;
+                        Pair<ServerConfigLine, EntityStatus> lm = Main.LeaseManagers.Find(lm => lm.First.ID == id)!;
                         if (lm == null)
                             return false;
 
-                        lm.Second = typeof(LMStatus).GetPropertyValue<Color>(status);
+                        lm.Second.Status = typeof(LMStatus).GetPropertyValue<Color>(status);
                         return true;
                     }
-                    break;
             }
 
             return false;
