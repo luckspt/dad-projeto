@@ -6,18 +6,10 @@ using System.Threading.Tasks;
 
 namespace LeaseManager.Paxos
 {
-    public class Lease
+    public class TmLeases
     {
         public String Key { get; }
-        public int Epoch { get; }
-        public int TargetTMId { get; }
-
-        public Lease(String key, int epoch, int targetTMId)
-        {
-            this.Key = key;
-            this.Epoch = epoch;
-            this.TargetTMId = targetTMId;
-        }
+        public List<string> TmIds { get; }
     }
 
     public class PaxosInstance

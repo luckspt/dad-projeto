@@ -30,6 +30,7 @@ namespace Manager
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
             lsvwClients = new ListView();
             lblClients = new Label();
             lsvwTMs = new ListView();
@@ -40,6 +41,11 @@ namespace Manager
             lblLMsLabel = new Label();
             lblTMsLabel = new Label();
             lblClientsLabel = new Label();
+            ctxLMs = new ContextMenuStrip(components);
+            crashToolStripMenuItem = new ToolStripMenuItem();
+            delayToolStripMenuItem = new ToolStripMenuItem();
+            hookConfigToolStripMenuItem = new ToolStripMenuItem();
+            ctxLMs.SuspendLayout();
             SuspendLayout();
             // 
             // lsvwClients
@@ -78,6 +84,7 @@ namespace Manager
             lsvwLMs.Size = new Size(268, 330);
             lsvwLMs.TabIndex = 7;
             lsvwLMs.UseCompatibleStateImageBehavior = false;
+            lsvwLMs.MouseClick += lsvwLMs_MouseClick;
             // 
             // lblTMs
             // 
@@ -131,6 +138,31 @@ namespace Manager
             lblClientsLabel.TabIndex = 12;
             lblClientsLabel.Text = "lblClientsLabel";
             // 
+            // ctxLMs
+            // 
+            ctxLMs.Items.AddRange(new ToolStripItem[] { crashToolStripMenuItem, delayToolStripMenuItem, hookConfigToolStripMenuItem });
+            ctxLMs.Name = "ctxLMs";
+            ctxLMs.Size = new Size(181, 92);
+            // 
+            // crashToolStripMenuItem
+            // 
+            crashToolStripMenuItem.Name = "crashToolStripMenuItem";
+            crashToolStripMenuItem.Size = new Size(180, 22);
+            crashToolStripMenuItem.Text = "Crash";
+            crashToolStripMenuItem.Click += crashToolStripMenuItem_Click;
+            // 
+            // delayToolStripMenuItem
+            // 
+            delayToolStripMenuItem.Name = "delayToolStripMenuItem";
+            delayToolStripMenuItem.Size = new Size(180, 22);
+            delayToolStripMenuItem.Text = "Delay";
+            // 
+            // hookConfigToolStripMenuItem
+            // 
+            hookConfigToolStripMenuItem.Name = "hookConfigToolStripMenuItem";
+            hookConfigToolStripMenuItem.Size = new Size(180, 22);
+            hookConfigToolStripMenuItem.Text = "Hook Config";
+            // 
             // Main
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -145,9 +177,12 @@ namespace Manager
             Controls.Add(lsvwTMs);
             Controls.Add(lblClients);
             Controls.Add(lsvwClients);
+            FormBorderStyle = FormBorderStyle.FixedSingle;
+            MaximizeBox = false;
             Name = "Main";
             Text = "Main";
             Load += Entry_Load;
+            ctxLMs.ResumeLayout(false);
             ResumeLayout(false);
             PerformLayout();
         }
@@ -164,5 +199,9 @@ namespace Manager
         private Label lblLMsLabel;
         private Label lblTMsLabel;
         private Label lblClientsLabel;
+        private ContextMenuStrip ctxLMs;
+        private ToolStripMenuItem crashToolStripMenuItem;
+        private ToolStripMenuItem delayToolStripMenuItem;
+        private ToolStripMenuItem hookConfigToolStripMenuItem;
     }
 }

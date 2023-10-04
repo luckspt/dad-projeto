@@ -1,4 +1,5 @@
-﻿using Grpc.Core;
+﻿using Google.Protobuf.Collections;
+using Grpc.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,23 +8,23 @@ using System.Threading.Tasks;
 
 namespace LeaseManager.Paxos
 {
-    internal class LeaseDTO
+    internal class TmLeasesDTO
     {
-        static public List<Lease> fromProtobuf(TransactionLeases leases)
+        static public Dictionary<string, List<string>> fromProtobuf(RepeatedField<global::TmLeases> leases)
         {
-            return leases.Leases
-                 .Select(lease => new Lease(lease.Key, lease.Epoch, lease.TargetTMId))
-                 .ToList();
+            return leases.ToDictionary(lease => lease.Key, lease => lease.TmIds.ToList());
         }
 
-        static public TransactionLeases toProtobuf(List<Lease> leases)
+        static public RepeatedField<global::TmLeases> toProtobuf(Dictionary<string, List<string>> leases)
         {
-            TransactionLeases transactionLeases = new TransactionLeases();
-            transactionLeases.Leases.AddRange(leases
-                .Select(lease => new global::Lease {
+            RepeatedField<global::TmLeases> transactionLeases = new RepeatedField<global::TmLeases>();
+            transactionLeases.AddRange(
+                leases
+                .Select(lease => new global::TmLeases
+                {
                     Key = lease.Key,
-                    Epoch = lease.Epoch,
-                    TargetTMId = lease.TargetTMId }));
+                    TmIds = { lease.Value }
+                }));
 
             return transactionLeases;
         }
@@ -50,19 +51,19 @@ namespace LeaseManager.Paxos
 
         public override PromiseResponse Promise(PromiseRequest request, CallOptions options)
         {
-            return new PromiseResponse { Ok = this.phase1.Promise(request.Epoch, LeaseDTO.fromProtobuf(request.Leases)) };
+            return new PromiseResponse { Ok = this.phase1.Promise(request.Epoch, TmLeasesDTO.fromProtobuf(request.Leases)) };
         }
         #endregion
 
         #region Phase 2
         public override AcceptResponse Accept(AcceptRequest request, CallOptions options)
         {
-            return new AcceptResponse { Ok = this.phase2.Accept(request.Epoch, LeaseDTO.fromProtobuf(request.Leases)) };
+            return new AcceptResponse { Ok = this.phase2.Accept(request.Epoch, TmLeasesDTO.fromProtobuf(request.Leases)) };
         }
 
         public override AcceptedResponse Accepted(AcceptedRequest request, CallOptions options)
         {
-            return new AcceptedResponse { Ok = this.phase2.Accepted(request.Epoch, LeaseDTO.fromProtobuf(request.Leases)) };
+            return new AcceptedResponse { Ok = this.phase2.Accepted(request.Epoch, TmLeasesDTO.fromProtobuf(request.Leases)) };
         }
         #endregion
 

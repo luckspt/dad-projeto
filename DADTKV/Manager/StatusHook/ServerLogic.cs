@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Manager.StatusHook
 {
-    internal class ManagerStatusHook
+    internal class ServerLogic
     {
         public bool Execute(string id, EntityType type, string status)
         {
@@ -17,10 +17,11 @@ namespace Manager.StatusHook
                 case EntityType.Client:
                     lock (Main.Clients)
                     {
+                        // Verify it's a valid status
                         if (!ClientStatus.Statuses.Contains(status))
                             return false;
 
-                        Pair<ClientConfigLine, Color> client = Main.Clients.Find(client => client.First.ID == id);
+                        Pair<ClientConfigLine, Color> client = Main.Clients.Find(client => client.First.ID == id)!;
                         if (client == null)
                             return false;
 
@@ -32,10 +33,11 @@ namespace Manager.StatusHook
                 case EntityType.TransactionManager:
                     lock (Main.TransactionManagers)
                     {
+                        // Verify it's a valid status
                         if (!TMStatus.Statuses.Contains(status))
                             return false;
 
-                        Pair<ServerConfigLine, Color> tm = Main.TransactionManagers.Find(tm => tm.First.ID == id);
+                        Pair<ServerConfigLine, Color> tm = Main.TransactionManagers.Find(tm => tm.First.ID == id)!;
                         if (tm == null)
                             return false;
 
@@ -46,10 +48,11 @@ namespace Manager.StatusHook
                 case EntityType.LeaseManager:
                     lock (Main.LeaseManagers)
                     {
+                        // Verify it's a valid status
                         if (!LMStatus.Statuses.Contains(status))
                             return false;
 
-                        Pair<ServerConfigLine, Color> lm = Main.LeaseManagers.Find(lm => lm.First.ID == id);
+                        Pair<ServerConfigLine, Color> lm = Main.LeaseManagers.Find(lm => lm.First.ID == id)!;
                         if (lm == null)
                             return false;
 

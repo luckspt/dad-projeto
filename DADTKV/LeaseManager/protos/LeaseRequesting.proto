@@ -8,7 +8,7 @@ service LeaseRequestingService {
 message RequestLeasesRequest {
 	// Allow multiple keys per request to improve performance (batching)
 	repeated string keys = 1;
-	int32 requesterTMId = 2;
+	string requesterTMId = 2;
 }
 
 message RequestLeasesResponse {

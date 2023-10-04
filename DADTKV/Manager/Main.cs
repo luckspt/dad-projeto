@@ -1,3 +1,5 @@
+using Manager.Manager;
+using Manager.StatusHook;
 using Parser;
 using Parser.Parsers;
 using System.Diagnostics;
@@ -5,52 +7,18 @@ using System.Threading;
 
 namespace Manager
 {
-    class ClientStatus
-    {
-        public static readonly Color NotStarted = Color.Gray;
-        public static readonly Color Idle = Color.Yellow;
-        public static readonly Color SendingRequests = Color.Green;
-
-        public static readonly string[] Statuses = new string[] { "NotStarted", "Idle", "SendingRequests" };
-    }
-
-    class TMStatus
-    {
-        public static readonly Color NotStarted = Color.Gray;
-        public static readonly Color Idle = Color.Yellow;
-        public static readonly Color Crashed = Color.Red;
-        public static readonly Color ExecutingTransaction = Color.LightGreen;
-        public static readonly Color CommitingTransaction = Color.DarkGreen;
-
-        public static readonly string[] Statuses = new string[] { "NotStarted", "Idle", "Crashed", "ExecutingTransaction", "CommitingTransaction" };
-    }
-
-    class LMStatus
-    {
-        public static readonly Color NotStarted = Color.Gray;
-        public static readonly Color Idle = Color.Yellow;
-        public static readonly Color Crashed = Color.Red;
-        public static readonly Color PaxosProposer = Color.LightGreen;
-        public static readonly Color PaxosAcceptor = Color.DarkGreen;
-
-        public static readonly string[] Statuses = new string[] { "NotStarted", "Idle", "Crashed", "PaxosProposer", "PaxosAcceptor" };
-    }
-
     public partial class Main : Form
     {
-        public static List<Pair<ClientConfigLine, Color>> Clients { get; private set; }
-        public static List<Pair<ServerConfigLine, Color>> TransactionManagers { get; private set; }
-        public static List<Pair<ServerConfigLine, Color>> LeaseManagers { get; private set; }
+        public static List<Pair<ClientConfigLine, Color>> Clients { get; private set; } = new List<Pair<ClientConfigLine, Color>>();
+        public static List<Pair<ServerConfigLine, Color>> TransactionManagers { get; private set; } = new List<Pair<ServerConfigLine, Color>>();
+        public static List<Pair<ServerConfigLine, Color>> LeaseManagers { get; private set; } = new List<Pair<ServerConfigLine, Color>>();
 
-        private ConfigParser config = null;
-        private System.Threading.Timer processTimer = null;
+        private ConfigParser? config = null;
+        private System.Threading.Timer? processTimer = null;
 
         public Main()
         {
             InitializeComponent();
-            Main.Clients = new List<Pair<ClientConfigLine, Color>>();
-            Main.TransactionManagers = new List<Pair<ServerConfigLine, Color>>();
-            Main.LeaseManagers = new List<Pair<ServerConfigLine, Color>>();
         }
 
         private void updateStatuses(object state)
@@ -145,6 +113,7 @@ namespace Manager
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
+                Environment.Exit(1);
             }
         }
 
@@ -183,11 +152,14 @@ namespace Manager
         private void startProcessMonitoring()
         {
             // Update GUI every second
-            this.processTimer = new System.Threading.Timer(this.updateStatuses, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+            this.processTimer = new System.Threading.Timer(this.updateStatuses!, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        }
 
-            // Start StatusHookService
-
-
+        private void stopProcessMonitoring()
+        {
+            // TODO notify peers to stop sending status updates
+            this.processTimer?.Dispose();
+            this.processTimer = null;
         }
 
         private void startProcesses()
@@ -234,5 +206,62 @@ namespace Manager
 
             return solutionDirectory;
         }
+
+        private void lsvwLMs_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                ListViewItem focusedItem = lsvwLMs.FocusedItem;
+                if (focusedItem != null && focusedItem.Bounds.Contains(e.Location))
+                {
+                    this.ctxLMs.Show(Cursor.Position);
+                }
+            }
+        }
+
+        private void crashToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            ListViewItem focusedItem = lsvwLMs.FocusedItem;
+            if (focusedItem == null) return;
+
+            string id = focusedItem.Text;
+            Pair<ServerConfigLine, Color> lm = Main.LeaseManagers.Find(lm => lm.First.ID == id)!;
+            if (lm == null) return;
+
+            // TODO don't create everytime
+            new ManagerClient().Crash(lm.First.Url);
+        }
     }
+
+    class ClientStatus
+    {
+        public static readonly Color NotStarted = Color.Gray;
+        public static readonly Color Idle = Color.Yellow;
+        public static readonly Color SendingRequests = Color.Green;
+
+        public static readonly string[] Statuses = new string[] { "NotStarted", "Idle", "SendingRequests" };
+    }
+
+    class TMStatus
+    {
+        public static readonly Color NotStarted = Color.Gray;
+        public static readonly Color Idle = Color.Yellow;
+        public static readonly Color Crashed = Color.Red;
+        public static readonly Color ExecutingTransaction = Color.LightGreen;
+        public static readonly Color CommitingTransaction = Color.DarkGreen;
+
+        public static readonly string[] Statuses = new string[] { "NotStarted", "Idle", "Crashed", "ExecutingTransaction", "CommitingTransaction" };
+    }
+
+    class LMStatus
+    {
+        public static readonly Color NotStarted = Color.Gray;
+        public static readonly Color Idle = Color.Yellow;
+        public static readonly Color Crashed = Color.Red;
+        public static readonly Color PaxosProposer = Color.LightGreen;
+        public static readonly Color PaxosAcceptor = Color.DarkGreen;
+
+        public static readonly string[] Statuses = new string[] { "NotStarted", "Idle", "Crashed", "PaxosProposer", "PaxosAcceptor" };
+    }
+
 }

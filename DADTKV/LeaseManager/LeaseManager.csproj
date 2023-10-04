@@ -16,6 +16,7 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<ProjectReference Include="..\ConfigParser\Parser.csproj" />
+		<ProjectReference Include="..\ManagerServices\ManagerClientServices.csproj" />
 
 		<Protobuf Include="protos\Paxos.proto" GrpcServices="Server" />
 		<Protobuf Include="protos\Paxos.proto" GrpcServices="Client" />
