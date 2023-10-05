@@ -15,7 +15,7 @@ namespace LeaseManager.Paxos
     public class PaxosInstance
     {
         // TODO: epoch?
-        public string Id { get; }
+        public int Slot { get; }
         private Dictionary<string, List<string>> value;
         private int writeTimestamp;
         private int readTimestamp;
@@ -25,12 +25,12 @@ namespace LeaseManager.Paxos
 
         public List<int> peers = new List<int>();
 
-        public PaxosInstance(string id, Dictionary<string, List<string>> value, int writeTimestamp, int readTimestamp)
+        public PaxosInstance(int slot, Dictionary<string, List<string>> value)
         {
-            this.Id = id;
+            this.Slot = slot;
             this.value = value;
-            this.writeTimestamp = writeTimestamp;
-            this.readTimestamp = readTimestamp;
+            this.writeTimestamp = 0;
+            this.readTimestamp = 0;
             this.Phase1 = new Phase1(this);
             this.Phase2 = new Phase2(this);
         }

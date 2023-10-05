@@ -1,4 +1,4 @@
-﻿using LeaseManager.Leases;
+﻿using LeaseManager.LeaseRequesting;
 using LeaseManager.Paxos;
 using System;
 using System.Collections.Generic;
@@ -10,31 +10,35 @@ namespace LeaseManager
 {
     internal class LeaseManager
     {
-        private string id;
-        private LeaseBuffer leaseBuffer;
+        private LeaseRequestsBuffer leaseRequestsBuffer;
+        private TimeSlots timeSlots;
+        private Timer? paxosTimer;
 
-        public LeaseManager(string id)
+        public LeaseManager(LeaseRequestsBuffer leaseRequestsBuffer, int slots, int slotDurationMs)
         {
-            this.leaseBuffer = new LeaseBuffer();
-            Timer timer = new Timer(this.StartPaxos, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
+            this.leaseRequestsBuffer = leaseRequestsBuffer;
+            this.timeSlots = new TimeSlots(slots, slotDurationMs);
         }
 
-        public void StartPaxos(object state)
+        public void Start()
         {
-            lock (this.leaseBuffer)
+            this.paxosTimer = new Timer(this.StartPaxos!, this.timeSlots.Slots, TimeSpan.FromMilliseconds(this.timeSlots.SlotDurationMs), TimeSpan.FromMilliseconds(this.timeSlots.SlotDurationMs));
+        }
+
+        private void StartPaxos(object state)
+        {
+            lock (this.leaseRequestsBuffer)
             {
                 try
                 {
-                    PaxosInstance instance = new PaxosInstance(this.id, this.leaseBuffer.GetBuffer(), 0, 0);
-                    this.leaseBuffer.Clear();
+                    this.timeSlots.CreateNewPaxosInstance(this.leaseRequestsBuffer.GetBuffer());
+                    this.leaseRequestsBuffer.Clear();
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine(e);
                 }
-
             }
-
         }
     }
 }

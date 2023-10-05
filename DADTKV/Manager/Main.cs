@@ -25,7 +25,7 @@ namespace Manager
         {
             // Set labels
             this.lblClientsLabel.Text = "Gray = Not Started\nYellow = Idle\nGreen = Sending requests";
-            this.lblTMsLabel.Text = "Gray = Not Started\nYellow = Idle (waiting for a lease)\nRed = Crashed\nLight Green = Executing transaction\nDark Green = Commiting Transaction";
+            this.lblTMsLabel.Text = "Gray = Not Started\nYellow = Idle\nRed = Crashed\nLight Green = Waiting for Lease\nDark Green = Executing Transaction";
             this.lblLMsLabel.Text = "Gray = Not Started\nYellow = Idle\nRed = Crashed\nLight Green = Paxos Proposer\nDark Green = Paxos Acceptor";
 
             this.fdConfig.Title = "Select the configuration file";
@@ -270,10 +270,10 @@ namespace Manager
         public static readonly Color NotStarted = Color.Gray;
         public static readonly Color Idle = Color.Yellow;
         public static readonly Color Crashed = Color.Red;
-        public static readonly Color ExecutingTransaction = Color.LightGreen;
-        public static readonly Color CommitingTransaction = Color.DarkGreen;
+        public static readonly Color WaitingLease = Color.LightGreen;
+        public static readonly Color ExecutingTransaction = Color.DarkGreen;
 
-        public static readonly string[] Statuses = new string[] { "NotStarted", "Idle", "Crashed", "ExecutingTransaction", "CommitingTransaction" };
+        public static readonly string[] Statuses = new string[] { "NotStarted", "Idle", "Crashed", "WaitingLease", "ExecutingTransaction" };
     }
 
     class LMStatus

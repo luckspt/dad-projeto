@@ -19,8 +19,8 @@
 		<ProjectReference Include="..\ConfigParser\Parser.csproj" />
 		<ProjectReference Include="..\ManagerServices\ManagerClientServices.csproj" />
 
-		<Protobuf Include="protos\Paxos.proto" GrpcServices="Server" />
-		<Protobuf Include="protos\Paxos.proto" GrpcServices="Client" />
+		<Protobuf Include="protos\Paxos.proto" GrpcServices="Both" />
+		<Protobuf Include="protos\LeaseRequesting.proto" GrpcServices="Server" />
 		<Protobuf Include="protos\LeaseUpdates.proto" GrpcServices="Client" />
 	</ItemGroup>
 

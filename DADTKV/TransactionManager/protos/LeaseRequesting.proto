@@ -1,7 +1,7 @@
 ﻿syntax = "proto3";
 
 service LeaseRequestingService {
-	rpc RequestLease(RequestLeasesRequest) returns (RequestLeasesResponse);
+	rpc RequestLeases(RequestLeasesRequest) returns (RequestLeasesResponse);
 }
 
 // Requesting

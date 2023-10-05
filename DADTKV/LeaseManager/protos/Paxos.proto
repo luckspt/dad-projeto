@@ -16,7 +16,9 @@ message TmLeases {
 
 // Prepare
 message PrepareRequest {
-	int32 epoch = 1;
+	int32 slot = 1;
+	int32 epoch = 2;
+	string leasesHash = 3; // TODO: implement
 }
 
 message PrepareResponse {
@@ -26,8 +28,10 @@ message PrepareResponse {
 
 // Promise
 message PromiseRequest {
-	int32 epoch = 1;
-	repeated TmLeases leases = 2;
+	int32 slot = 1;
+	int32 epoch = 2;
+	repeated TmLeases leases = 3; // optional
+	repeated TmLeases outLeases = 4; // TODO: implement
 }
 
 message PromiseResponse {
@@ -37,8 +41,9 @@ message PromiseResponse {
 
 // Accept
 message AcceptRequest {
-	int32 epoch = 1;
-	repeated TmLeases leases = 2;
+	int32 slot = 1;
+	int32 epoch = 2;
+	repeated TmLeases leases = 3;
 }
 
 message AcceptResponse {
@@ -48,8 +53,9 @@ message AcceptResponse {
 
 // Accepted
 message AcceptedRequest {
-	int32 epoch = 1;
-	repeated TmLeases leases = 2;
+	int32 slot = 1;
+	int32 epoch = 2;
+	repeated TmLeases leases = 3;
 }
 
 message AcceptedResponse {

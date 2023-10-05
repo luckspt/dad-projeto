@@ -4,18 +4,23 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LeaseManager.Leases
+namespace LeaseManager.LeaseRequesting
 {
-    internal class LeaseBuffer
+    internal class LeaseRequestsBuffer
     {
         private Dictionary<string, List<string>> buffer;
 
-        public LeaseBuffer()
+        public LeaseRequestsBuffer()
         {
             this.buffer = new Dictionary<string, List<string>>();
         }
 
-        public bool AddRange(string managerId, List<string> keys)
+        /// <summary>
+        /// Add keys to the buffer with insertion-sort
+        /// </summary>
+        /// <param name="managerId">The manager the keys belong to</param>
+        /// <param name="keys">The keys</param>
+        public void AddRange(string managerId, List<string> keys)
         {
             lock (this)
             {
@@ -35,10 +40,11 @@ namespace LeaseManager.Leases
                     }
                 }
             }
-
-            return true;
         }
 
+        /// <summary>
+        /// A copy of the buffer
+        /// </summary>
         public Dictionary<string, List<string>> GetBuffer()
         {
             return this.buffer.ToDictionary(entry => entry.Key, entry => new List<string>(entry.Value));
