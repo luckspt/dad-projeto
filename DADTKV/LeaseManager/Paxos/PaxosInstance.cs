@@ -29,20 +29,20 @@ namespace LeaseManager.Paxos
     {
         public readonly int Slot;
         public readonly PaxosServiceClient Client;
-        public readonly Dictionary<string, List<string>> SelfLeases;
+        public readonly LeaseStore SelfLeases;
         public Proposal Proposal { get; }
         public List<LMPeer> Proposers { get; }
         public List<LMPeer> Acceptors { get; }
         public List<LMPeer> Learners { get; }
 
-        private Dictionary<string, List<string>>? value;
+        private LeaseStore? value;
         private int writeTimestamp;
         private int readTimestamp;
 
         private Promises promises;
         private Accepteds accepteds;
 
-        public PaxosInstance(int slot, int proposerPosition, Dictionary<string, List<string>> selfLeases, List<LMPeer> proposers, List<LMPeer> acceptors, List<LMPeer> learners)
+        public PaxosInstance(int slot, int proposerPosition, LeaseStore selfLeases, List<LMPeer> proposers, List<LMPeer> acceptors, List<LMPeer> learners)
         {
             this.Slot = slot;
             this.Client = new PaxosServiceClient(this);
@@ -62,7 +62,11 @@ namespace LeaseManager.Paxos
         {
             Logger.GetInstance().Log($"Paxos.{this.Slot}.{this.Proposal.Number}", $"Starting (proposer={this.Proposal.IsProposer()})");
             if (this.Proposal.IsProposer())
+            {
+                // Sleep for a bit so it's more likely that the other LMs also started the Paxos instance
+                Thread.Sleep(3000);
                 this.SendPrepare();
+            }
         }
 
         /// <summary>
@@ -96,7 +100,7 @@ namespace LeaseManager.Paxos
                 {
                     Slot = this.Slot,
                     ProposalNumber = this.Proposal.Number,
-                    ProposerLeasesHash = this.SelfLeases.GetHashCode(),
+                    ProposerLeasesHash = this.SelfLeases.GetSHA254Hash(),
                 };
 
                 // TODO: being on a thread will most likely cause issues if we create a new proposal round.........
@@ -137,9 +141,9 @@ namespace LeaseManager.Paxos
         /// Internal method to craft a Promise
         /// </summary>
         /// <returns>The Promise</returns>
-        private PromiseResponse CraftPromise(int proposerHash)
+        private PromiseResponse CraftPromise(string proposerHash)
         {
-            int selfHash = this.SelfLeases.GetHashCode();
+            string selfHash = this.SelfLeases.GetSHA254Hash();
             Logger.GetInstance().Log($"Paxos.{this.Slot}.{this.Proposal.Number}", $"CraftPromise (writeTimestamp={this.writeTimestamp}, proposerHash={proposerHash}, selfHash={selfHash})");
 
             // No need to lock, we are already locked from ProcessPrepare
@@ -148,10 +152,10 @@ namespace LeaseManager.Paxos
                 Slot = this.Slot,
                 WriteTimestamp = this.writeTimestamp,
                 // .ToDictionary so its a copy and not a reference
-                Value = this.value?.ToDictionary(entry => entry.Key, entry => new List<string>(entry.Value)),
+                Value = this.value?.Copy(),
             };
 
-            if (selfHash != proposerHash)
+            if (!selfHash.Equals(proposerHash))
                 promise.SelfLeases = this.SelfLeases;
 
             return promise;
@@ -214,7 +218,7 @@ namespace LeaseManager.Paxos
         {
             // No need to lock, we are already locked from ReceivedMajorityPromises which is locked by ProcessPromise
             // - !!! if we change ReceivedMajorityPromises to a thread, beware of locking!!!
-            Dictionary<string, List<string>> toPropose
+            LeaseStore toPropose
                 = this.promises.GreatestWriteTimestamp != 0 ? this.value! : this.SelfLeases;
 
             Logger.GetInstance().Log($"Paxos.{this.Slot}.{this.Proposal.Number}", $"SendAccept (promises.GreatestWriteTimestamp={this.promises.GreatestWriteTimestamp})");
@@ -253,7 +257,7 @@ namespace LeaseManager.Paxos
         /// Internal method to craft an Accepted
         /// </summary>
         /// <returns>The Accepted</returns>
-        private AcceptedResponse CraftAccepted(int proposalNumber, Dictionary<string, List<string>> value)
+        private AcceptedResponse CraftAccepted(int proposalNumber, LeaseStore value)
         {
             return new AcceptedResponse
             {

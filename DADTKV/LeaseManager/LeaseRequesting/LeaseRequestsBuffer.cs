@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Common;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,11 +9,11 @@ namespace LeaseManager.LeaseRequesting
 {
     internal class LeaseRequestsBuffer
     {
-        private Dictionary<string, List<string>> buffer;
+        private LeaseStore buffer;
 
         public LeaseRequestsBuffer()
         {
-            this.buffer = new Dictionary<string, List<string>>();
+            this.buffer = new LeaseStore();
         }
 
         /// <summary>
@@ -45,9 +46,9 @@ namespace LeaseManager.LeaseRequesting
         /// <summary>
         /// A copy of the buffer
         /// </summary>
-        public Dictionary<string, List<string>> GetBuffer()
+        public LeaseStore GetBuffer()
         {
-            return this.buffer.ToDictionary(entry => entry.Key, entry => new List<string>(entry.Value));
+            return this.buffer.Copy();
         }
 
         public void Clear()

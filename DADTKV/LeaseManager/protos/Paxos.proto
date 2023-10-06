@@ -15,7 +15,7 @@ message TmLeases {
 message PrepareRequest {
 	int32 slot = 1;
 	int32 proposalNumber = 2;
-	int32 proposerLeasesHash = 3;
+	string proposerLeasesHash = 3;
 }
 
 message PromiseResponse {

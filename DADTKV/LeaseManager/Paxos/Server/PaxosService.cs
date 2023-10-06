@@ -1,4 +1,5 @@
-﻿using Google.Protobuf.Collections;
+﻿using Common;
+using Google.Protobuf.Collections;
 using Grpc.Core;
 using System;
 using System.Collections.Generic;
@@ -10,12 +11,12 @@ namespace LeaseManager.Paxos.Server
 {
     internal class TmLeasesDTO
     {
-        static public Dictionary<string, List<string>> fromProtobuf(RepeatedField<TmLeases> leases)
+        static public LeaseStore fromProtobuf(RepeatedField<TmLeases> leases)
         {
-            return leases.ToDictionary(lease => lease.Key, lease => lease.TmIds.ToList());
+            return LeaseStore.FromDict(leases.ToDictionary(lease => lease.Key, lease => lease.TmIds.ToList()));
         }
 
-        static public RepeatedField<TmLeases> toProtobuf(Dictionary<string, List<string>> leases)
+        static public RepeatedField<TmLeases> toProtobuf(LeaseStore leases)
         {
             RepeatedField<TmLeases> transactionLeases = new RepeatedField<TmLeases>();
             transactionLeases.AddRange(

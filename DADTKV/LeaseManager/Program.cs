@@ -27,6 +27,9 @@ namespace Manager
             managerServiceLogic.StartLeaseManagerDelegate = (List<string> leaseManagersAddresses, List<string> transactionManagersAddresses, int proposerPosition)
                 => Program.StartLeaseManager(leaseManagersAddresses, transactionManagersAddresses, proposerPosition, lm, args[2]);
 
+            // TODO this is used for testing, remove it
+            LeaseRequestingServiceLogic leaseRequestingServiceLogic = new LeaseRequestingServiceLogic(leaseRequestsBuffer);
+
             // Set server port
             HostPort hostPort = HostPort.FromString(args[2]);
             ServerPort serverPort = new ServerPort("0.0.0.0", hostPort.Port, ServerCredentials.Insecure);
@@ -34,7 +37,7 @@ namespace Manager
             {
                 Services = {
                     ManagerService.BindService(new ManagerClientServices.ManagerService(managerServiceLogic)),
-                    global::LeaseRequestingService.BindService(new LeaseManager.LeaseRequesting.LeaseRequestingService(new LeaseRequestingServiceLogic(leaseRequestsBuffer))),
+                    global::LeaseRequestingService.BindService(new LeaseManager.LeaseRequesting.LeaseRequestingService(leaseRequestingServiceLogic)),
                     global::PaxosService.BindService(new LeaseManager.Paxos.Server.PaxosService(new PaxosServiceLogic(lm.TimeSlots))),
                 },
                 Ports = { serverPort }
@@ -47,8 +50,29 @@ namespace Manager
             // Starting Paxos is made remotely by the Manager so we know about the peers
             // it will call StartLeaseManager
 
+            // TODO this is used for testing, remove it
+            new Task(() => Program.SimulateRequests(leaseRequestingServiceLogic)).Start();
+
             // Wait indefinitely
             Program.GrpcServer.ShutdownTask.Wait();
+        }
+
+        private static string[] tmIds = new string[] { "banana", "almondega", "iogurte" };
+        private static string[] keys = new string[] { "samsung", "xiaomi", "nokia", "asus", "apple", "huawei", "lg", "motorola", "sony", "oneplus", "oppo", "realme", "vivo", "google", "lenovo", "htc", "blackberry", "meizu", "acer", "alcatel", "amazon", "casio", "cat", "dell", "ericsson", "fujitsu", "garmin", "gigabyte", "hp", "infinix", "jolla", "karbonn", "kyocera", "lava", "micromax", "microsoft", "mitac", "modu", "nec", "nvidia", "orange", "palm", "panasonic", "philips", "plum", "qtek", "sagem", "sharp", "siemens", "toshiba", "vertu", "vodafone", "wiko", "xcute", "yota", "zte" };
+        private static void SimulateRequests(LeaseRequestingServiceLogic leaseRequestingServiceLogic)
+        {
+            while (true)
+            {
+                foreach (string tm in Program.tmIds)
+                {
+                    // Select 3 random keys
+                    string[] keys = Program.keys.OrderBy(x => Guid.NewGuid()).Take(3).ToArray();
+
+                    leaseRequestingServiceLogic.RequestLeases(tm, keys.ToList());
+                }
+
+                Thread.Sleep(3000);
+            }
         }
 
         private static bool StartLeaseManager(List<string> leaseManagersAddresses, List<string> transactionManagersAddresses, int proposerPosition, LeaseManager.LeaseManager lm, string myAddress)

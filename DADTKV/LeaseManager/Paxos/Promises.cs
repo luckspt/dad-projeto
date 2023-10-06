@@ -1,4 +1,5 @@
-﻿using Google.Protobuf.WellKnownTypes;
+﻿using Common;
+using Google.Protobuf.WellKnownTypes;
 using LeaseManager.Paxos.Server;
 using System;
 using System.Collections.Generic;
@@ -12,7 +13,7 @@ namespace LeaseManager.Paxos
     {
         public int Slot;
         public int ProposalNumber;
-        public int ProposerLeasesHash;
+        public string ProposerLeasesHash;
     }
 
     internal class PrepareRequestDTO
@@ -43,8 +44,8 @@ namespace LeaseManager.Paxos
     {
         public int Slot;
         public int WriteTimestamp;
-        public Dictionary<string, List<string>>? Value;
-        public Dictionary<string, List<string>> SelfLeases;
+        public LeaseStore? Value;
+        public LeaseStore SelfLeases;
     }
 
     public struct Promises

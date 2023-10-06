@@ -1,4 +1,5 @@
-﻿using LeaseManager.Paxos.Server;
+﻿using Common;
+using LeaseManager.Paxos.Server;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,7 @@ namespace LeaseManager.Paxos
     {
         public int Slot;
         public int ProposalNumber;
-        public Dictionary<string, List<string>> Value;
+        public LeaseStore Value;
     }
 
     internal class AcceptRequestDTO
@@ -41,7 +42,7 @@ namespace LeaseManager.Paxos
     {
         public int Slot;
         public int ProposalNumber;
-        public Dictionary<string, List<string>>? Value;
+        public LeaseStore? Value;
     }
 
     public struct Accepteds
