@@ -25,7 +25,7 @@ namespace Manager
 
             ManagerClientServices.ManagerServiceLogic managerServiceLogic = new ManagerClientServices.ManagerServiceLogic(Program.ManagerClient);
             managerServiceLogic.StartLeaseManagerDelegate = (List<string> leaseManagersAddresses, List<string> transactionManagersAddresses, int proposerPosition)
-                => Program.StartLeaseManager(leaseManagersAddresses, transactionManagersAddresses, proposerPosition, lm, args[0]);
+                => Program.StartLeaseManager(leaseManagersAddresses, transactionManagersAddresses, proposerPosition, lm, args[2]);
 
             // Set server port
             HostPort hostPort = HostPort.FromString(args[2]);

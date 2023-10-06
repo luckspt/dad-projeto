@@ -24,6 +24,7 @@ namespace LeaseManager
 
         public void CreateNewPaxosInstance(Dictionary<string, List<string>> leases, List<LMPeer> proposers, List<LMPeer> acceptors, List<LMPeer> learners, int proposerPosition)
         {
+            Task t;
             lock (this)
             {
                 PaxosInstance instance = new PaxosInstance(this.CurrentSlot, proposerPosition, leases, proposers, acceptors, learners);
@@ -32,8 +33,12 @@ namespace LeaseManager
                 this.paxosInstances.Add(this.CurrentSlot, instance);
                 this.CurrentSlot++;
 
-                new Task(() => instance.Start()).Start();
+                t = new Task(() => instance.Start());
             }
+
+            // Sleep for a bit so it's more likely that the other LMs also started the Paxos instance
+            Thread.Sleep(1500);
+            t.Start();
         }
 
         public PaxosInstance? GetPaxosInstance(int slot)

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Manager;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +9,18 @@ namespace LeaseManager.Paxos.Server
 {
     public class Proposal
     {
-        public int Number { get; set; }
+        public int Number
+        {
+            get => this.number;
+            set
+            {
+                this.number = value;
+
+                // Status for GUI
+                Program.ManagerClient.Status = "Paxos" + (this.IsProposer() ? "Proposer" : "Acceptor");
+            }
+        }
+        private int number;
         private int proposerCount;
         private int selfPosition;
 
@@ -19,9 +31,9 @@ namespace LeaseManager.Paxos.Server
         /// <param name="proposerCount">The amount of proposers</param>
         public Proposal(int selfPosition, int proposerCount)
         {
-            this.Number = 1; // always starts at 1
             this.selfPosition = selfPosition;
             this.proposerCount = proposerCount;
+            this.Number = 1; // always starts at 1
         }
 
         /// <summary>
