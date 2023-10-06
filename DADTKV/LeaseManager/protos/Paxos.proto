@@ -1,10 +1,8 @@
 ﻿syntax = "proto3";
 
 service PaxosService {
-    rpc Prepare(PrepareRequest) returns (PrepareResponse);
-	rpc Promise(PromiseRequest) returns (PromiseResponse);
-    rpc Accept(AcceptRequest) returns (AcceptResponse);
-	rpc Accepted(AcceptedRequest) returns (AcceptedResponse);
+    rpc Prepare(PrepareRequest) returns (PromiseResponse);
+    rpc Accept(AcceptRequest) returns (AcceptedResponse);
 }
 
 // Structures
@@ -14,51 +12,27 @@ message TmLeases {
 }
 // ------------------------------
 
-// Prepare
 message PrepareRequest {
 	int32 slot = 1;
-	int32 epoch = 2;
-	string leasesHash = 3; // TODO: implement
-}
-
-message PrepareResponse {
-	bool ok = 1;
-}
-// ------------------------------
-
-// Promise
-message PromiseRequest {
-	int32 slot = 1;
-	int32 epoch = 2;
-	repeated TmLeases leases = 3; // optional
-	repeated TmLeases outLeases = 4; // TODO: implement
+	int32 proposalNumber = 2;
+	int32 proposerLeasesHash = 3;
 }
 
 message PromiseResponse {
-	bool ok = 1;
+	int32 slot = 1;
+	int32 writeTimestamp = 2;
+	repeated TmLeases leases = 3; // optional
+	repeated TmLeases selfLeases = 4; // TODO: implement
 }
-// ------------------------------
 
-// Accept
 message AcceptRequest {
 	int32 slot = 1;
-	int32 epoch = 2;
-	repeated TmLeases leases = 3;
-}
-
-message AcceptResponse {
-	bool ok = 1;
-}
-// ------------------------------
-
-// Accepted
-message AcceptedRequest {
-	int32 slot = 1;
-	int32 epoch = 2;
+	int32 proposalNumber = 2;
 	repeated TmLeases leases = 3;
 }
 
 message AcceptedResponse {
-	bool ok = 1;
+	int32 slot = 1;
+	int32 proposalNumber = 2;
+	repeated TmLeases leases = 3;
 }
-// ------------------------------

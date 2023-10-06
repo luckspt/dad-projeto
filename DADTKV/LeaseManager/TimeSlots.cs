@@ -26,8 +26,8 @@ namespace LeaseManager
             lock (this)
             {
                 // TODO: is this everything to start a new Paxos instance?
-                // TODO it's missing the peers at least
-                PaxosInstance instance = new PaxosInstance(this.CurrentSlot, leases);
+                // - it's missing the peers at least
+                PaxosInstance instance = new PaxosInstance(this.CurrentSlot, leases, new List<LMPeer>());
                 this.paxosInstances.Add(this.CurrentSlot, instance);
                 this.CurrentSlot++;
             }
