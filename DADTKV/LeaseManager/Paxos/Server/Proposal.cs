@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace LeaseManager.Paxos.Server
 {
-    internal class Proposal
+    public class Proposal
     {
         public int Number { get; set; }
         private int proposerCount;
@@ -19,7 +19,7 @@ namespace LeaseManager.Paxos.Server
         /// <param name="proposerCount">The amount of proposers</param>
         public Proposal(int selfPosition, int proposerCount)
         {
-            this.Number = 1;
+            this.Number = 1; // always starts at 1
             this.selfPosition = selfPosition;
             this.proposerCount = proposerCount;
         }

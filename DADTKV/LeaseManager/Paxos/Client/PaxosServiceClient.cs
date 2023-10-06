@@ -1,4 +1,5 @@
-﻿using Grpc.Core;
+﻿using Common;
+using Grpc.Core;
 using Grpc.Net.Client;
 using LeaseManager.Paxos.Server;
 using System;
@@ -20,22 +21,37 @@ namespace LeaseManager.Paxos.Client
 
         public bool Prepare(PrepareRequest prepare)
         {
-            List<AsyncUnaryCall<global::PromiseResponse>> responses = new List<AsyncUnaryCall<global::PromiseResponse>>();
+            Logger.GetInstance().Log($"ClientPrepare.{prepare.Slot}", $"Sending Prepare (proposal={prepare.ProposalNumber}, hash={prepare.ProposerLeasesHash})");
+            List<Task<global::PromiseResponse>> responses = new List<Task<global::PromiseResponse>>();
             foreach (LMPeer acceptor in instance.Acceptors)
             {
                 // First we send all the requests
                 // TODO handle when there is an error when sending the request (maybe it's just on receiving the response?)
-                responses.Add(GetClient(acceptor.Address).PrepareAsync(PrepareRequestDTO.toProtobuf(prepare)));
+                Task<global::PromiseResponse> task = new Task<global::PromiseResponse>(() =>
+                {
+                    try
+                    {
+                        return GetClient(acceptor.Address).Prepare(PrepareRequestDTO.toProtobuf(prepare));
+                    }
+                    catch (RpcException e)
+                    {
+                        Logger.GetInstance().Log($"ClientPrepare.{prepare.Slot}.{prepare.ProposalNumber}", $"ERROR ON PaxosServiceClient.Prepare (sending thread) {e.Message}");
+                        return null;
+                    }
+                });
+
+                task.Start();
+                responses.Add(task);
             };
 
             // Then we wait for all the responses
-            foreach (AsyncUnaryCall<global::PromiseResponse> response in responses)
+            foreach (Task<global::PromiseResponse> response in responses)
             {
                 try
                 {
                     // TODO handle when there is no response so we don't wait forever
-                    response.ResponseAsync.Wait();
-                    global::PromiseResponse? promiseResponse = response.ResponseAsync.Result;
+                    response.Wait();
+                    global::PromiseResponse? promiseResponse = response.Result;
 
                     // We receive a null, meaning the acceptor already promised to a higher value.
                     if (promiseResponse == null) return false;
@@ -44,43 +60,59 @@ namespace LeaseManager.Paxos.Client
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"ERROR ON PaxosServiceClient.Prepare {e.Message}");
+                    Logger.GetInstance().Log($"ClientPrepare.{prepare.Slot}.{prepare.ProposalNumber}", $"ERROR ON PaxosServiceClient.Prepare (receiving) {e.Message}");
                 }
             }
 
             return true;
         }
 
-        public void Accept(AcceptRequest accept)
+        public bool Accept(AcceptRequest accept)
         {
-            List<AsyncUnaryCall<global::AcceptedResponse>> responses = new List<AsyncUnaryCall<global::AcceptedResponse>>();
+            Logger.GetInstance().Log($"ClientAccept.{accept.Slot}", $"Sending Accept (proposal={accept.ProposalNumber})");
+            List<Task<global::AcceptedResponse>> responses = new List<Task<global::AcceptedResponse>>();
             foreach (LMPeer acceptor in instance.Acceptors)
             {
                 // First we send all the requests
                 // TODO handle when there is an error when sending the request (maybe it's just on receiving the response?)
-                responses.Add(GetClient(acceptor.Address).AcceptAsync(AcceptRequestDTO.toProtobuf(accept)));
+                Task<global::AcceptedResponse> task = new Task<global::AcceptedResponse>(() =>
+                {
+                    try
+                    {
+                        return GetClient(acceptor.Address).Accept(AcceptRequestDTO.toProtobuf(accept));
+                    }
+                    catch (RpcException e)
+                    {
+                        Logger.GetInstance().Log($"ClientAccept.{accept.Slot}.{accept.ProposalNumber}", $"ERROR ON PaxosServiceClient.Accept (sending thread) {e.Message}");
+                        return null;
+                    }
+                });
+
+                task.Start();
+                responses.Add(task);
             }
 
             // Then we wait for all the responses
-            foreach (AsyncUnaryCall<global::AcceptedResponse> response in responses)
+            foreach (Task<global::AcceptedResponse> response in responses)
             {
                 try
                 {
                     // TODO handle when there is no response so we don't wait forever
-                    response.ResponseAsync.Wait();
-                    global::AcceptedResponse? acceptedResponse = response.ResponseAsync.Result;
+                    response.Wait();
+                    global::AcceptedResponse? acceptedResponse = response.Result;
 
                     // We receive a null, meaning the acceptor already promised to a higher value.
-                    // TODO: how should we handle this?
-                    if (acceptedResponse == null) continue;
+                    if (acceptedResponse == null) return false;
 
                     this.instance.ProcessAccepted(AcceptedResponseDTO.fromProtobuf(acceptedResponse)!.Value);
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"ERROR ON PaxosServiceClient.Accept {e.Message}");
+                    Logger.GetInstance().Log($"ClientAccept.{accept.Slot}", $"ERROR ON PaxosServiceClient.Accept (receiving) {e.Message}");
                 }
             }
+
+            return true;
         }
 
         private PaxosService.PaxosServiceClient GetClient(string address)

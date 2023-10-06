@@ -1,4 +1,5 @@
-﻿using LeaseManager.Paxos;
+﻿using Common;
+using LeaseManager.Paxos;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,22 +17,22 @@ namespace LeaseManager
 
         public TimeSlots(int slots, int slotDurationMs)
         {
-            this.CurrentSlot = 0;
+            this.CurrentSlot = 1;
             this.Slots = slots;
             this.SlotDurationMs = slotDurationMs;
         }
 
-        public void CreateNewPaxosInstance(Dictionary<string, List<string>> leases, List<LMPeer> proposers, List<LMPeer> acceptors, List<LMPeer> learners)
+        public void CreateNewPaxosInstance(Dictionary<string, List<string>> leases, List<LMPeer> proposers, List<LMPeer> acceptors, List<LMPeer> learners, int proposerPosition)
         {
             lock (this)
             {
-                // TODO: is this everything to start a new Paxos instance?
-                // - it's missing the peers at least
-                Console.WriteLine($"[LM] Starting new Paxos Instance (slot={this.CurrentSlot}) with {leases.Count} requests");
+                PaxosInstance instance = new PaxosInstance(this.CurrentSlot, proposerPosition, leases, proposers, acceptors, learners);
+                Logger.GetInstance().Log("TimeSlots", $"Starting new Paxos Instance (slot={this.CurrentSlot}) with {leases.Count} lease requests. Proposer={instance.Proposal.IsProposer()}, ProposerPosition={proposerPosition}");
 
-                PaxosInstance instance = new PaxosInstance(this.CurrentSlot, 0, leases, proposers, acceptors, learners);
                 this.paxosInstances.Add(this.CurrentSlot, instance);
                 this.CurrentSlot++;
+
+                new Task(() => instance.Start()).Start();
             }
         }
 

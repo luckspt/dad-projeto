@@ -41,12 +41,13 @@ namespace Manager.Manager
             });
         }
 
-        public void StartLeaseManager(string address, List<string> leaseManagersAddresses, List<string> transactionManagersAddresses)
+        public void StartLeaseManager(string address, List<string> leaseManagersAddresses, List<string> transactionManagersAddresses, int proposerPosition)
         {
             this.GetClient(address).StartLeaseManager(new StartLeaseManagerRequest()
             {
                 LeaseManagersAddresses = { leaseManagersAddresses },
                 TransactionManagersAddresses = { transactionManagersAddresses },
+                ProposerPosition = proposerPosition,
             });
         }
 

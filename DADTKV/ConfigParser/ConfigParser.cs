@@ -9,11 +9,11 @@ namespace Parser
         // Client Identification (C)
         Client,
         // Running time (S)
-        Time,
+        Slots,
         // Start time (T)
         StartTime,
         // Time slot (D)
-        TimeSlot,
+        SlotDuration,
         // Server State (F)
         ServerState,
         // Client: ReadriteSet (T)
@@ -22,7 +22,8 @@ namespace Parser
         Wait,
     }
 
-    public interface ConfigLine {
+    public interface ConfigLine
+    {
     }
 
     public interface Parser
@@ -39,11 +40,11 @@ namespace Parser
         public Dictionary<ConfigType, List<ConfigLine>> Config { get; }
 
         // TODO: add status
-        public ConfigParser(string path) : this(path, new List<Parser>() { new ClientParser(), new ServerParser(), new ServerStateParser(), new StartTimeParser(), new TimeParser(), new TimeSlotParser(), new ReadWriteSetParser(), new WaitParser()}, "#")
-        {}
+        public ConfigParser(string path) : this(path, new List<Parser>() { new ClientParser(), new ServerParser(), new ServerStateParser(), new StartTimeParser(), new SlotsParser(), new SlotDurationParser(), new ReadWriteSetParser(), new WaitParser() }, "#")
+        { }
 
         public ConfigParser(string path, List<Parser> parsers) : this(path, parsers, "#")
-        {}
+        { }
 
         public ConfigParser(string path, List<Parser> parsers, string commentChars)
         {

@@ -1,4 +1,5 @@
-﻿using LeaseManager.Paxos.Server;
+﻿using Google.Protobuf.WellKnownTypes;
+using LeaseManager.Paxos.Server;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -43,7 +44,7 @@ namespace LeaseManager.Paxos
         public int Slot;
         public int WriteTimestamp;
         public Dictionary<string, List<string>>? Value;
-        public Dictionary<string, List<string>>? SelfLeases;
+        public Dictionary<string, List<string>> SelfLeases;
     }
 
     public struct Promises
@@ -71,13 +72,17 @@ namespace LeaseManager.Paxos
         {
             if (response == null) return null;
 
-            return new global::PromiseResponse
+            global::PromiseResponse promise = new global::PromiseResponse
             {
                 Slot = response.Value.Slot,
                 WriteTimestamp = response.Value.WriteTimestamp,
-                Value = { response.Value.Value == null ? null : TmLeasesDTO.toProtobuf(response.Value.Value) },
-                SelfLeases = { response.Value.SelfLeases == null ? null : TmLeasesDTO.toProtobuf(response.Value.SelfLeases) }
+                SelfLeases = { TmLeasesDTO.toProtobuf(response.Value.SelfLeases) }
             };
+
+            if (response.Value.Value != null)
+                promise.Value.AddRange(TmLeasesDTO.toProtobuf(response.Value.Value));
+
+            return promise;
         }
     }
 }

@@ -14,8 +14,8 @@
 P TM1 T http://127.0.0.1:10000
 P TM2 T http://127.0.0.1:10002
 P TM3 T http://127.0.0.1:10003
-P LeaseManager1 L http://127.0.0.1:10004
 P LM2 L http://127.0.0.1:10008
+P LeaseManager1 L http://127.0.0.1:10004
 P lease3 L http://127.0.0.1:10009
 #
 # A client (indicated by the 'C' process code) does not have a g-RPC URL,
@@ -34,7 +34,7 @@ S 100
 T 12:10:15
 #
 # Each time slots lasts 10000 miliseconds
-D 10000 
+D 10000000 
 #
 # F commands describe the state of server processes
 #

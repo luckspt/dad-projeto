@@ -20,7 +20,7 @@ namespace LeaseManager
             this.leaseRequestsBuffer = leaseRequestsBuffer;
         }
 
-        public void Start(List<string> leaseManagersAddresses, List<string> transactionManagersAddresses)
+        public void Start(List<string> leaseManagersAddresses, List<string> transactionManagersAddresses, int proposerPosition)
         {
             List<LMPeer> proposers = leaseManagersAddresses.Select(address => new LMPeer(address)).ToList();
             List<LMPeer> acceptors = proposers.ToList();
@@ -28,16 +28,29 @@ namespace LeaseManager
                 .Concat(transactionManagersAddresses.Select(address => new LMPeer(address)).ToList())
                 .ToList();
 
-            this.paxosTimer = new Timer((object state) => this.StartPaxos(proposers, acceptors, learners), this.TimeSlots.Slots, TimeSpan.FromMilliseconds(this.TimeSlots.SlotDurationMs), TimeSpan.FromMilliseconds(this.TimeSlots.SlotDurationMs));
+            // TODO REMOVE
+            new Task(() => this.StartPaxos(proposers, acceptors, learners, proposerPosition)).Start();
+            // --
+            this.paxosTimer = new Timer((object state) => this.StartPaxos(proposers, acceptors, learners, proposerPosition), this.TimeSlots.Slots, TimeSpan.FromMilliseconds(this.TimeSlots.SlotDurationMs), TimeSpan.FromMilliseconds(this.TimeSlots.SlotDurationMs));
         }
 
-        private void StartPaxos(List<LMPeer> proposers, List<LMPeer> acceptors, List<LMPeer> learners)
+        private void StartPaxos(List<LMPeer> proposers, List<LMPeer> acceptors, List<LMPeer> learners, int proposerPosition)
         {
             lock (this.leaseRequestsBuffer)
             {
                 try
                 {
-                    this.TimeSlots.CreateNewPaxosInstance(this.leaseRequestsBuffer.GetBuffer(), proposers, acceptors, learners);
+                    if (this.TimeSlots.CurrentSlot >= this.TimeSlots.Slots)
+                    {
+                        this.paxosTimer?.Dispose();
+                        this.paxosTimer = null;
+                        return;
+                    }
+
+                    // if (this.leaseRequestsBuffer.GetBuffer().Count == 0)
+                    // return;
+
+                    this.TimeSlots.CreateNewPaxosInstance(this.leaseRequestsBuffer.GetBuffer(), proposers, acceptors, learners, proposerPosition);
                     this.leaseRequestsBuffer.Clear();
                 }
                 catch (Exception e)

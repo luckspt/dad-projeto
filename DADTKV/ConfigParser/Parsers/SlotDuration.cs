@@ -7,12 +7,12 @@ using System.Threading.Tasks;
 
 namespace Parser.Parsers
 {
-    public struct TimeSlotConfigLine : ConfigLine
+    public struct SlotDurationConfigLine : ConfigLine
     {
-        public int Time;
+        public int Duration;
     }
 
-    internal class TimeSlotParser : Parser
+    internal class SlotDurationParser : Parser
     {
         private Regex regex = new Regex(@"^D (\d+) *$", RegexOptions.Compiled);
         public Tuple<ConfigType, ConfigLine>? Result(string line)
@@ -21,10 +21,10 @@ namespace Parser.Parsers
             if (!match.Success) return null;
 
             return new Tuple<ConfigType, ConfigLine>(
-                ConfigType.TimeSlot,
-                new TimeConfigLine
+                ConfigType.SlotDuration,
+                new SlotDurationConfigLine
                 {
-                    Time = int.Parse(match.Groups[1].Value),
+                    Duration = int.Parse(match.Groups[1].Value),
                 }
             );
         }

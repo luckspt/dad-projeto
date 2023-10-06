@@ -176,10 +176,12 @@ namespace Manager
         {
             string solutionDirectory = this.getSolutionDirectory();
 
+            int slots = ((SlotsConfigLine)this.config!.Config[ConfigType.Slots][0]).Count;
+            int slotDuration = ((SlotDurationConfigLine)this.config.Config[ConfigType.SlotDuration][0]).Duration;
             // Start LMs
             foreach (Pair<ServerConfigLine, EntityStatus> lm in Main.LeaseManagers)
             {
-                string arguments = $"{Program.ManagerAddress.ToString()} {lm.First.ID} {lm.First.Url}";
+                string arguments = $"{Program.ManagerAddress} {lm.First.ID} {lm.First.Url} {slots} {slotDuration}";
                 Process.Start(solutionDirectory + "/LeaseManager/bin/Debug/net6.0/LeaseManager.exe", arguments);
             }
 
@@ -209,9 +211,9 @@ namespace Manager
                 // Tell all LMs to start Paxos
                 List<string> lmAddresses = Main.LeaseManagers.Select(lm => lm.First.Url).ToList();
                 List<string> tmAddresses = Main.TransactionManagers.Select(tm => tm.First.Url).ToList();
-                foreach (Pair<ServerConfigLine, EntityStatus> lm in Main.LeaseManagers)
+                for (int i = 0; i < Main.LeaseManagers.Count; i++)
                 {
-                    new ManagerClient().StartLeaseManager(lm.First.Url, lmAddresses, tmAddresses);
+                    new ManagerClient().StartLeaseManager(Main.LeaseManagers[i].First.Url, lmAddresses, tmAddresses, i + 1);
                 }
 
                 // Start Clients

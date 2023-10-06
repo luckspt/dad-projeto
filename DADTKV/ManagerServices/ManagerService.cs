@@ -28,7 +28,7 @@ namespace ManagerClientServices
         public override Task<StartLeaseManagerResponse> StartLeaseManager(StartLeaseManagerRequest request, ServerCallContext context)
         {
             if (this.serverLogic.StartLeaseManagerDelegate != null)
-                return Task.FromResult(new StartLeaseManagerResponse { Ok = this.serverLogic.StartLeaseManagerDelegate(request.LeaseManagersAddresses.ToList(), request.TransactionManagersAddresses.ToList()) });
+                return Task.FromResult(new StartLeaseManagerResponse { Ok = this.serverLogic.StartLeaseManagerDelegate(request.LeaseManagersAddresses.ToList(), request.TransactionManagersAddresses.ToList(), request.ProposerPosition) });
             else
                 return Task.FromResult(new StartLeaseManagerResponse { Ok = false });
         }

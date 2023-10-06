@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace ManagerClientServices
 {
     public delegate bool CommunicationDelay(int delayMsPerRequest);
-    public delegate bool StartLeaseManager(List<string> leaseManagersAddresses, List<string> transactionManagersAddresses);
+    public delegate bool StartLeaseManager(List<string> leaseManagersAddresses, List<string> transactionManagersAddresses, int proposerPosition);
 
     public partial class ManagerServiceLogic
     {
