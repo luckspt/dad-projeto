@@ -15,23 +15,23 @@ namespace LeaseManager.Paxos.Server
             this.timeSlots = timeSlots;
         }
 
-        public PromiseResponse? Prepare(int slot, int epoch, int locktableHash)
+        public PromiseResponse? Prepare(PrepareRequest request)
         {
-            PaxosInstance? instance = timeSlots.GetPaxosInstance(slot);
+            PaxosInstance? instance = timeSlots.GetPaxosInstance(request.Slot);
             if (instance == null) return null;
 
-            PromiseResponse? response = instance.Phase1.Prepare(epoch, locktableHash);
+            PromiseResponse? response = instance.ProcessPrepare(request);
             if (response == null) return null; // just to be explicit
 
             return response;
         }
 
-        public AcceptedResponse? Accept(int slot, int epoch, Dictionary<string, List<string>> leases)
+        public AcceptedResponse? Accept(AcceptRequest request)
         {
-            PaxosInstance? instance = timeSlots.GetPaxosInstance(slot);
+            PaxosInstance? instance = timeSlots.GetPaxosInstance(request.Slot);
             if (instance == null) return null;
 
-            AcceptedResponse? response = instance.Phase2.Accept(epoch, leases);
+            AcceptedResponse? response = instance.ProcessAccept(request);
             if (response == null) return null; // just to be explicit
 
             return response;

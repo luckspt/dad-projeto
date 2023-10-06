@@ -18,21 +18,14 @@ namespace LeaseManager.Paxos.Client
             this.instance = instance;
         }
 
-        public void Prepare(int epoch, int valueHash)
+        public void Prepare(PrepareRequest prepare)
         {
             List<AsyncUnaryCall<global::PromiseResponse>> responses = new List<AsyncUnaryCall<global::PromiseResponse>>();
             foreach (LMPeer acceptor in instance.GetAcceptors())
             {
-                PrepareRequest request = new PrepareRequest
-                {
-                    Slot = instance.Slot,
-                    Epoch = epoch,
-                    LeasesHash = valueHash
-                };
-
                 // First we send all the requests
                 // TODO handle when there is an error when sending the request (maybe it's just on receiving the response?)
-                responses.Add(GetClient(acceptor.Address).PrepareAsync(request));
+                responses.Add(GetClient(acceptor.Address).PrepareAsync(PrepareRequestDTO.toProtobuf(prepare)));
             };
 
             // Then we wait for all the responses

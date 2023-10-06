@@ -21,18 +21,18 @@ message PrepareRequest {
 message PromiseResponse {
 	int32 slot = 1;
 	int32 writeTimestamp = 2;
-	repeated TmLeases leases = 3; // optional
+	repeated TmLeases value = 3; // optional
 	repeated TmLeases selfLeases = 4; // TODO: implement
 }
 
 message AcceptRequest {
 	int32 slot = 1;
 	int32 proposalNumber = 2;
-	repeated TmLeases leases = 3;
+	repeated TmLeases value = 3;
 }
 
 message AcceptedResponse {
 	int32 slot = 1;
 	int32 proposalNumber = 2;
-	repeated TmLeases leases = 3;
+	repeated TmLeases value = 3;
 }

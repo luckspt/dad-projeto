@@ -20,7 +20,6 @@ namespace LeaseManager.Paxos
 
     public class PaxosInstance
     {
-        // TODO: epoch?
         public readonly int Slot;
         public readonly PaxosServiceClient Client;
         public readonly Dictionary<string, List<string>> SelfLeases;
@@ -44,7 +43,7 @@ namespace LeaseManager.Paxos
             this.value = null;
             this.writeTimestamp = 0;
             this.readTimestamp = 0;
-            this.promises = new Promises { GreatestWriteEpoch = 0, ReceivedCount = 0 };
+            this.promises = new Promises { GreatestWriteTimestamp = 0, ReceivedCount = 0 };
             this.accepteds = new Accepteds { ReceivedCount = new Dictionary<int, int>() };
         }
 
@@ -63,17 +62,24 @@ namespace LeaseManager.Paxos
             return this.peers;
         }
 
-        public PrepareRequest SendPrepare()
+        public void SendPrepare()
         {
             // Proposer sends a prepare
             lock (this)
             {
                 // Reset values
-                this.promises = new Promises { GreatestWriteEpoch = 0, ReceivedCount = 0 };
+                this.promises = new Promises { GreatestWriteTimestamp = 0, ReceivedCount = 0 };
                 this.accepteds = new Accepteds { ReceivedCount = new Dictionary<int, int>() };
 
-                // TODO
-                return null;
+                PrepareRequest prepare = new PrepareRequest
+                {
+                    Slot = this.Slot,
+                    ProposalNumber = this.proposalNumber,
+                    ProposerLeasesHash = this.SelfLeases.GetHashCode(),
+                };
+
+                // TODO should this be in thread? If so, make copies of the values we are sending so they don't change (because they are references)
+                this.Client.Prepare(prepare);
             }
         }
 
@@ -85,12 +91,12 @@ namespace LeaseManager.Paxos
         {
             lock (this)
             {
-                if (this.readTimestamp >= prepare.Epoch)
+                if (this.readTimestamp >= prepare.ProposalNumber)
                     return null; // nack
 
-                this.readTimestamp = prepare.Epoch;
+                this.readTimestamp = prepare.ProposalNumber;
 
-                return this.CraftPromise(prepare.LeasesHash);
+                return this.CraftPromise(prepare.ProposerLeasesHash);
             }
         }
 
@@ -104,9 +110,9 @@ namespace LeaseManager.Paxos
             PromiseResponse promise = new PromiseResponse
             {
                 Slot = this.Slot,
-                WriteEpoch = proposalNumber,
+                WriteTimestamp = proposalNumber,
                 // .ToDictionary so its a copy and not a reference
-                Leases = this.value?.ToDictionary(entry => entry.Key, entry => new List<string>(entry.Value)),
+                Value = this.value?.ToDictionary(entry => entry.Key, entry => new List<string>(entry.Value)),
             };
 
             if (this.SelfLeases.GetHashCode() != proposerHash)
@@ -122,26 +128,20 @@ namespace LeaseManager.Paxos
         {
             lock (this)
             {
-                // TODO promises count on value
+                // We don't need to count on the proposal number because acceptors return nack if they don't promise
                 this.promises.ReceivedCount++;
 
                 // -1 because we also count
                 int otherAcceptors = (this.GetAcceptors().Count - 1) / 2;
-                // We only care about the majority from the acceptors, so we can ignore the rest
-                if (this.promises.ReceivedCount >= otherAcceptors)
-                {
-                    //  == will make it so we only accept the majority once
-                    if (this.promises.ReceivedCount == otherAcceptors)
-                        this.ReceivedMajorityPromises();
-
+                // If we already have the majority, we don't care about the rest
+                if (this.promises.ReceivedCount > otherAcceptors)
                     return false;
-                }
 
-                // If the epoch is higher than the highest epoch we have seen, update our values
-                if (promise.WriteEpoch > this.promises.GreatestWriteEpoch)
+                // If the write timestamp is higher than the highest write timestamp we have seen, update our values
+                if (promise.WriteTimestamp > this.promises.GreatestWriteTimestamp)
                 {
-                    this.promises.GreatestWriteEpoch = promise.WriteEpoch;
-                    this.value = promise.Leases;
+                    this.promises.GreatestWriteTimestamp = promise.WriteTimestamp;
+                    this.value = promise.Value;
                 }
 
                 if (promise.SelfLeases != null)
@@ -150,60 +150,89 @@ namespace LeaseManager.Paxos
                     //  of all responding proposers if we/they don't have some values
                 }
 
+                //  == will make it so we only accept the majority once
+                if (this.promises.ReceivedCount == otherAcceptors)
+                    this.ReceivedMajorityPromises();
+
                 return true;
             }
         }
 
+        /// <summary>
+        /// Proposer notes it has received a majority of promises and can continue to Phase 2
+        /// </summary>
         private void ReceivedMajorityPromises()
         {
-            // No need to lock, we are already locked from ProcessPromise
-            Dictionary<string, List<string>> toPropose
-                = this.promises.GreatestWriteEpoch != 0 ? this.value! : this.SelfLeases;
-
             // TODO should this be in a thread?
-            // - if it is, do we need to lock? Because this.value or this.SelfLeases may change
-            this.SendAccept(this.proposalNumber, toPropose);
+            // - if it should, do we need to lock? Because this.value or this.SelfLeases may change
+            this.SendAccept();
         }
 
-        private void SendAccept(int epoch, Dictionary<string, List<string>> leases)
+        /// <summary>
+        /// Proposer starts Phase 2 and sends an accept
+        /// </summary>
+        private void SendAccept()
         {
+            // No need to lock, we are already locked from ReceivedMajorityPromises which is locked by ProcessPromise
+            // - !!! if we change ReceivedMajorityPromises to a thread, beware of locking!!!
+            Dictionary<string, List<string>> toPropose
+                = this.promises.GreatestWriteTimestamp != 0 ? this.value! : this.SelfLeases;
 
+            AcceptRequest accept = new AcceptRequest
+            {
+                Slot = this.Slot,
+                ProposalNumber = proposalNumber,
+                Value = toPropose,
+            };
+
+            // TODO should this be in thread? If so, make copies of the values we are sending so they don't change (because they are references)
+            this.Client.Accept(accept);
         }
 
+        /// <summary>
+        /// Acceptor receives an accept and processes it
+        /// </summary>
+        /// <returns>The Accepted</returns>
         public AcceptedResponse? ProcessAccept(AcceptRequest accept)
         {
             lock (this)
             {
-                // We only accept if the epoch is the same as the one we have promised
-                if (this.readTimestamp != accept.Epoch)
+                // We only accept if the proposal number is the same as the one we have promised
+                if (this.readTimestamp != accept.ProposalNumber)
                     return null;
 
-                this.value = accept.Leases;
-                this.writeTimestamp = accept.Epoch;
+                this.value = accept.Value;
+                this.writeTimestamp = accept.ProposalNumber;
 
-                return this.CraftAccepted(accept.Epoch, this.value);
+                return this.CraftAccepted(accept.ProposalNumber, this.value);
             }
         }
 
-        private AcceptedResponse CraftAccepted(int epoch, Dictionary<string, List<string>> leases)
+        /// <summary>
+        /// Internal method to craft an Accepted
+        /// </summary>
+        /// <returns>The Accepted</returns>
+        private AcceptedResponse CraftAccepted(int proposalNumber, Dictionary<string, List<string>> value)
         {
             return new AcceptedResponse
             {
                 Slot = this.Slot,
-                Epoch = epoch,
-                Leases = leases,
+                ProposalNumber = proposalNumber,
+                Value = value,
             };
         }
 
+        /// <summary>
+        /// Proposer receives an accepted and processes it
+        /// </summary>
         public bool ProcessAccepted(AcceptedResponse accepted)
         {
             lock (this)
             {
                 // Increment the number of accepted responses of this proposal number
                 int count = 0;
-                this.accepteds.ReceivedCount.TryGetValue(accepted.Epoch, out count);
-                this.accepteds.ReceivedCount[accepted.Epoch] = count + 1;
-
+                this.accepteds.ReceivedCount.TryGetValue(accepted.ProposalNumber, out count);
+                this.accepteds.ReceivedCount[accepted.ProposalNumber] = count + 1;
 
                 // -1 because we also count
                 int otherAcceptors = (this.GetAcceptors().Count - 1) / 2;
@@ -221,9 +250,13 @@ namespace LeaseManager.Paxos
             }
         }
 
+        /// <summary>
+        /// To execute when consensus is reached
+        /// </summary>
         private void ConsensusReached()
         {
             // No need to lock, we are already locked from ProcessAccepted
+            // TODO can we garbage collect this instance since it reached consensus?
         }
     }
 }
