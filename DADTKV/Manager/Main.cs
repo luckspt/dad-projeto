@@ -187,9 +187,40 @@ namespace Manager
             // foreach (Pair<ServerConfigLine, Color> tm in this.transactionManagers)
             // Process.Start(solutionDirectory + "/TransactionManager/bin/Debug/net6.0/TransactionManager.exe");
 
-            // Start Clients
-            // foreach (Pair<ClientConfigLine, Color> client in this.clients)
-            // Process.Start(solutionDirectory + "/DADTKV/bin/Debug/net6.0/DADTKV.exe", client.First.ScriptPath);
+            Thread thread = new Thread(() =>
+            {
+                // Wait for all LM and TM processes to start
+                bool allLMsStarted = false;
+                bool allTMsStarted = true;
+                while (true)
+                {
+                    if (Main.LeaseManagers.All(lm => lm.Second.Status == LMStatus.Idle))
+                        allLMsStarted = true;
+
+                    if (Main.TransactionManagers.All(tm => tm.Second.Status == TMStatus.Idle))
+                        allTMsStarted = true;
+
+                    if (allLMsStarted && allTMsStarted)
+                        break;
+
+                    Thread.Sleep(100);
+                }
+
+                // Tell all LMs to start Paxos
+                List<string> lmAddresses = Main.LeaseManagers.Select(lm => lm.First.Url).ToList();
+                List<string> tmAddresses = Main.TransactionManagers.Select(tm => tm.First.Url).ToList();
+                foreach (Pair<ServerConfigLine, EntityStatus> lm in Main.LeaseManagers)
+                {
+                    new ManagerClient().StartLeaseManager(lm.First.Url, lmAddresses, tmAddresses);
+                }
+
+                // Start Clients
+                // foreach (Pair<ClientConfigLine, Color> client in this.clients)
+                // Process.Start(solutionDirectory + "/DADTKV/bin/Debug/net6.0/DADTKV.exe", client.First.ScriptPath);
+            });
+
+            // Start but don't join so we don't block
+            thread.Start();
 
             // Focus the manager
             // TODO: doesn't work but its fine

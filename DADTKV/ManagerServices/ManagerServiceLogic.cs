@@ -7,10 +7,15 @@ using System.Threading.Tasks;
 
 namespace ManagerClientServices
 {
-    public class ManagerServiceLogic
+    public delegate bool CommunicationDelay(int delayMsPerRequest);
+    public delegate bool StartLeaseManager(List<string> leaseManagersAddresses, List<string> transactionManagersAddresses);
+
+    public partial class ManagerServiceLogic
     {
         private Timer? hookTimer = null;
         private ManagerClient hookClient;
+        public CommunicationDelay? CommunicationDelay { get; set; }
+        public StartLeaseManager? StartLeaseManagerDelegate { get; set; }
 
         public ManagerServiceLogic(ManagerClient hookClient)
         {
@@ -23,16 +28,6 @@ namespace ManagerClientServices
             // Suicide the process to emulate a crash
             Environment.Exit(1);
             return true;
-        }
-
-        public bool CommunicationDelay(int delayMsPerRequest)
-        {
-            // TODO: implement
-            // Maybe use interceptors (that sleep and block the thread)
-            //  and store the delayMsPerRequest in a centralized place
-            // Since this is in a library, extending this class can help implement
-            //  or use delegates/observers
-            return false;
         }
 
         public bool StatusHookConfig(bool enabled, int hookIntervalMs)
@@ -55,5 +50,4 @@ namespace ManagerClientServices
             }
         }
     }
-
 }

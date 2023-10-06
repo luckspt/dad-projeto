@@ -21,13 +21,15 @@ namespace LeaseManager
             this.SlotDurationMs = slotDurationMs;
         }
 
-        public void CreateNewPaxosInstance(Dictionary<string, List<string>> leases)
+        public void CreateNewPaxosInstance(Dictionary<string, List<string>> leases, List<LMPeer> proposers, List<LMPeer> acceptors, List<LMPeer> learners)
         {
             lock (this)
             {
                 // TODO: is this everything to start a new Paxos instance?
                 // - it's missing the peers at least
-                PaxosInstance instance = new PaxosInstance(this.CurrentSlot, leases, new List<LMPeer>());
+                Console.WriteLine($"[LM] Starting new Paxos Instance (slot={this.CurrentSlot}) with {leases.Count} requests");
+
+                PaxosInstance instance = new PaxosInstance(this.CurrentSlot, 0, leases, proposers, acceptors, learners);
                 this.paxosInstances.Add(this.CurrentSlot, instance);
                 this.CurrentSlot++;
             }

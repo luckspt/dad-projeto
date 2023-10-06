@@ -18,10 +18,10 @@ namespace LeaseManager.Paxos.Client
             this.instance = instance;
         }
 
-        public void Prepare(PrepareRequest prepare)
+        public bool Prepare(PrepareRequest prepare)
         {
             List<AsyncUnaryCall<global::PromiseResponse>> responses = new List<AsyncUnaryCall<global::PromiseResponse>>();
-            foreach (LMPeer acceptor in instance.GetAcceptors())
+            foreach (LMPeer acceptor in instance.Acceptors)
             {
                 // First we send all the requests
                 // TODO handle when there is an error when sending the request (maybe it's just on receiving the response?)
@@ -38,8 +38,7 @@ namespace LeaseManager.Paxos.Client
                     global::PromiseResponse? promiseResponse = response.ResponseAsync.Result;
 
                     // We receive a null, meaning the acceptor already promised to a higher value.
-                    // TODO: how should we handle this?
-                    if (promiseResponse == null) continue;
+                    if (promiseResponse == null) return false;
 
                     this.instance.ProcessPromise(PromiseResponseDTO.fromProtobuf(promiseResponse)!.Value);
                 }
@@ -48,23 +47,18 @@ namespace LeaseManager.Paxos.Client
                     Console.WriteLine($"ERROR ON PaxosServiceClient.Prepare {e.Message}");
                 }
             }
+
+            return true;
         }
 
-        public void Accept(int epoch, Dictionary<string, List<string>> leases)
+        public void Accept(AcceptRequest accept)
         {
             List<AsyncUnaryCall<global::AcceptedResponse>> responses = new List<AsyncUnaryCall<global::AcceptedResponse>>();
-            foreach (LMPeer acceptor in instance.GetAcceptors())
+            foreach (LMPeer acceptor in instance.Acceptors)
             {
-                AcceptRequest request = new AcceptRequest
-                {
-                    Slot = instance.Slot,
-                    Epoch = epoch,
-                    Leases = { TmLeasesDTO.toProtobuf(leases) }
-                };
-
                 // First we send all the requests
                 // TODO handle when there is an error when sending the request (maybe it's just on receiving the response?)
-                responses.Add(GetClient(acceptor.Address).AcceptAsync(request));
+                responses.Add(GetClient(acceptor.Address).AcceptAsync(AcceptRequestDTO.toProtobuf(accept)));
             }
 
             // Then we wait for all the responses
@@ -84,7 +78,7 @@ namespace LeaseManager.Paxos.Client
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"ERROR ON PaxosServiceClient.Prepare {e.Message}");
+                    Console.WriteLine($"ERROR ON PaxosServiceClient.Accept {e.Message}");
                 }
             }
         }

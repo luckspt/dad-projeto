@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using LeaseManager.Paxos.Client;
+using LeaseManager.Paxos.Server;
 
 namespace LeaseManager.Paxos
 {
@@ -13,9 +14,14 @@ namespace LeaseManager.Paxos
         public List<string> TmIds { get; }
     }
 
-    public struct LMPeer
+    public class LMPeer
     {
         public string Address { get; }
+
+        public LMPeer(string address)
+        {
+            this.Address = address;
+        }
     }
 
     public class PaxosInstance
@@ -23,9 +29,11 @@ namespace LeaseManager.Paxos
         public readonly int Slot;
         public readonly PaxosServiceClient Client;
         public readonly Dictionary<string, List<string>> SelfLeases;
-        public List<LMPeer> peers = new List<LMPeer>();
+        public List<LMPeer> Proposers { get; }
+        public List<LMPeer> Acceptors { get; }
+        public List<LMPeer> Learners { get; }
 
-        private int proposalNumber;
+        private Proposal proposal;
         private Dictionary<string, List<string>>? value;
         private int writeTimestamp;
         private int readTimestamp;
@@ -33,13 +41,15 @@ namespace LeaseManager.Paxos
         private Promises promises;
         private Accepteds accepteds;
 
-        public PaxosInstance(int slot, int proposalNumber, Dictionary<string, List<string>> selfLeases, List<LMPeer> peers)
+        public PaxosInstance(int slot, int selfPeerIndex, Dictionary<string, List<string>> selfLeases, List<LMPeer> proposers, List<LMPeer> acceptors, List<LMPeer> learners)
         {
             this.Slot = slot;
             this.Client = new PaxosServiceClient(this);
             this.SelfLeases = selfLeases;
-            this.peers = peers;
-            this.proposalNumber = proposalNumber;
+            this.Proposers = proposers;
+            this.Acceptors = acceptors;
+            this.Learners = learners;
+            this.proposal = new Proposal(selfPeerIndex, this.Proposers.Count);
             this.value = null;
             this.writeTimestamp = 0;
             this.readTimestamp = 0;
@@ -47,22 +57,29 @@ namespace LeaseManager.Paxos
             this.accepteds = new Accepteds { ReceivedCount = new Dictionary<int, int>() };
         }
 
-        public List<LMPeer> GetLearners()
+        public void Start()
         {
-            return this.peers;
+            if (this.proposal.IsProposer())
+                this.SendPrepare();
         }
 
-        public List<LMPeer> GetProposers()
+        /// <summary>
+        /// Start a new proposal round
+        /// </summary>
+        private void NewProposalRound()
         {
-            return this.peers;
+            lock (this)
+            {
+                this.proposal.NextProposalNumber();
+                // TODO Will this cause issues because we are already locked?
+                this.SendPrepare();
+            }
         }
 
-        public List<LMPeer> GetAcceptors()
-        {
-            return this.peers;
-        }
-
-        public void SendPrepare()
+        /// <summary>
+        /// Start Phase 1 and send a prepare
+        /// </summary>
+        private void SendPrepare()
         {
             // Proposer sends a prepare
             lock (this)
@@ -74,12 +91,13 @@ namespace LeaseManager.Paxos
                 PrepareRequest prepare = new PrepareRequest
                 {
                     Slot = this.Slot,
-                    ProposalNumber = this.proposalNumber,
+                    ProposalNumber = this.proposal.Number,
                     ProposerLeasesHash = this.SelfLeases.GetHashCode(),
                 };
 
-                // TODO should this be in thread? If so, make copies of the values we are sending so they don't change (because they are references)
-                this.Client.Prepare(prepare);
+                // If there's a higher proposal number, we will receive a nack and start a new proposal round
+                if (!this.Client.Prepare(prepare))
+                    this.NewProposalRound();
             }
         }
 
@@ -110,7 +128,7 @@ namespace LeaseManager.Paxos
             PromiseResponse promise = new PromiseResponse
             {
                 Slot = this.Slot,
-                WriteTimestamp = proposalNumber,
+                WriteTimestamp = this.writeTimestamp,
                 // .ToDictionary so its a copy and not a reference
                 Value = this.value?.ToDictionary(entry => entry.Key, entry => new List<string>(entry.Value)),
             };
@@ -132,7 +150,7 @@ namespace LeaseManager.Paxos
                 this.promises.ReceivedCount++;
 
                 // -1 because we also count
-                int otherAcceptors = (this.GetAcceptors().Count - 1) / 2;
+                int otherAcceptors = (this.Acceptors.Count - 1) / 2;
                 // If we already have the majority, we don't care about the rest
                 if (this.promises.ReceivedCount > otherAcceptors)
                     return false;
@@ -181,7 +199,7 @@ namespace LeaseManager.Paxos
             AcceptRequest accept = new AcceptRequest
             {
                 Slot = this.Slot,
-                ProposalNumber = proposalNumber,
+                ProposalNumber = this.proposal.Number,
                 Value = toPropose,
             };
 
@@ -235,7 +253,7 @@ namespace LeaseManager.Paxos
                 this.accepteds.ReceivedCount[accepted.ProposalNumber] = count + 1;
 
                 // -1 because we also count
-                int otherAcceptors = (this.GetAcceptors().Count - 1) / 2;
+                int otherAcceptors = (this.Acceptors.Count - 1) / 2;
                 if (count >= otherAcceptors)
                 {
                     //  == will make it so we only accept the majority once

@@ -24,5 +24,13 @@ namespace ManagerClientServices
         {
             return Task.FromResult(new StatusHookConfigResponse { Ok = this.serverLogic.StatusHookConfig(request.Enabled, request.HookIntervalMs) });
         }
+
+        public override Task<StartLeaseManagerResponse> StartLeaseManager(StartLeaseManagerRequest request, ServerCallContext context)
+        {
+            if (this.serverLogic.StartLeaseManagerDelegate != null)
+                return Task.FromResult(new StartLeaseManagerResponse { Ok = this.serverLogic.StartLeaseManagerDelegate(request.LeaseManagersAddresses.ToList(), request.TransactionManagersAddresses.ToList()) });
+            else
+                return Task.FromResult(new StartLeaseManagerResponse { Ok = false });
+        }
     }
 }
