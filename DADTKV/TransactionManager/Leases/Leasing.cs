@@ -23,10 +23,11 @@ namespace TransactionManager.Leases
         // The keys and a queue of transaction managers that hold a lease
         private Dictionary<string, List<string>> leases;
 
-        public Leasing(string managerId)
+        public Leasing(string managerId, List<Peer> leaseManagers)
         {
             this.managerId = managerId;
-            leases = new Dictionary<string, List<string>>();
+            this.LeaseManagers = leaseManagers;
+            this.leases = new Dictionary<string, List<string>>();
         }
 
         public bool HasToFree(string key)

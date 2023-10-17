@@ -5,6 +5,7 @@ service ManagerService {
 	rpc CommunicationDelay(CommunicationDelayRequest) returns (CommunicationDelayResponse);
 	rpc StatusHookConfig(StatusHookConfigRequest) returns (StatusHookConfigResponse);
 	rpc StartLeaseManager(StartLeaseManagerRequest) returns (StartLeaseManagerResponse);
+	rpc StartTransactionManager(StartTransactionManagerRequest) returns (StartTransactionManagerResponse);
 }
 
 message CrashRequest {
@@ -38,5 +39,15 @@ message StartLeaseManagerRequest {
 }
 
 message StartLeaseManagerResponse {
+	bool ok = 1;
+}
+
+message StartTransactionManagerRequest {
+	repeated string leaseManagersAddresses  = 1;
+	repeated string transactionManagersAddresses = 2;
+	int32 proposerPosition = 3;
+}
+
+message StartTransactionManagerResponse {
 	bool ok = 1;
 }

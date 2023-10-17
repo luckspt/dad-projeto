@@ -32,5 +32,14 @@ namespace ManagerClientServices
             else
                 return Task.FromResult(new StartLeaseManagerResponse { Ok = false });
         }
+
+        public override Task<StartTransactionManagerResponse> StartTransactionManager(StartTransactionManagerRequest request, ServerCallContext context)
+        {
+            if (this.serverLogic.StartTransactionManagerDelegate != null)
+                return Task.FromResult(new StartTransactionManagerResponse { Ok = this.serverLogic.StartTransactionManagerDelegate(request.LeaseManagersAddresses.ToList(), request.TransactionManagersAddresses.ToList()) });
+            else
+                return Task.FromResult(new StartTransactionManagerResponse { Ok = false });
+        }
+
     }
 }

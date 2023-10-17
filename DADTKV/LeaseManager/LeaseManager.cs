@@ -1,4 +1,5 @@
-﻿using LeaseManager.LeaseRequesting;
+﻿using Common;
+using LeaseManager.LeaseRequesting;
 using LeaseManager.Paxos;
 using System;
 using System.Collections.Generic;
@@ -22,19 +23,19 @@ namespace LeaseManager
 
         public void Start(List<string> leaseManagersAddresses, List<string> transactionManagersAddresses, int proposerPosition)
         {
-            List<LMPeer> proposers = leaseManagersAddresses.Select(address => new LMPeer(address)).ToList();
-            List<LMPeer> acceptors = proposers.ToList();
-            List<LMPeer> learners = proposers.ToList()
-                .Concat(transactionManagersAddresses.Select(address => new LMPeer(address)).ToList())
+            List<Peer> proposers = leaseManagersAddresses.Select(address => new Peer(address)).ToList();
+            List<Peer> acceptors = proposers.ToList();
+            List<Peer> learners = proposers.ToList()
+                .Concat(transactionManagersAddresses.Select(address => new Peer(address)).ToList())
                 .ToList();
 
-            // TODO REMOVE
-            new Task(() => this.StartPaxos(proposers, acceptors, learners, proposerPosition)).Start();
+            // TODO REMOVE (this way it start right away)
+            // new Task(() => this.StartPaxos(proposers, acceptors, learners, proposerPosition)).Start();
             // --
             this.paxosTimer = new Timer((object state) => this.StartPaxos(proposers, acceptors, learners, proposerPosition), this.TimeSlots.Slots, TimeSpan.FromMilliseconds(this.TimeSlots.SlotDurationMs), TimeSpan.FromMilliseconds(this.TimeSlots.SlotDurationMs));
         }
 
-        private void StartPaxos(List<LMPeer> proposers, List<LMPeer> acceptors, List<LMPeer> learners, int proposerPosition)
+        private void StartPaxos(List<Peer> proposers, List<Peer> acceptors, List<Peer> learners, int proposerPosition)
         {
             lock (this.leaseRequestsBuffer)
             {
@@ -47,6 +48,7 @@ namespace LeaseManager
                         return;
                     }
 
+                    // DON'T DO THIS: A REPLICA MAY BE EMPTY (because it couldn't be reached by TMs) BUT OTHERS MAY HAVE LEASES
                     // if (this.leaseRequestsBuffer.GetBuffer().Count == 0)
                     // return;
 

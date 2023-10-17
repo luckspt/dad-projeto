@@ -22,7 +22,7 @@ namespace LeaseManager
             this.SlotDurationMs = slotDurationMs;
         }
 
-        public void CreateNewPaxosInstance(LeaseStore leases, List<LMPeer> proposers, List<LMPeer> acceptors, List<LMPeer> learners, int proposerPosition)
+        public void CreateNewPaxosInstance(LeaseStore leases, List<Peer> proposers, List<Peer> acceptors, List<Peer> learners, int proposerPosition)
         {
             Task t;
             lock (this)

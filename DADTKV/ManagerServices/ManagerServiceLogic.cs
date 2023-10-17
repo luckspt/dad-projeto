@@ -9,6 +9,7 @@ namespace ManagerClientServices
 {
     public delegate bool CommunicationDelay(int delayMsPerRequest);
     public delegate bool StartLeaseManager(List<string> leaseManagersAddresses, List<string> transactionManagersAddresses, int proposerPosition);
+    public delegate bool StartTransactionManager(List<string> leaseManagersAddresses, List<string> transactionManagersAddresses);
 
     public partial class ManagerServiceLogic
     {
@@ -16,6 +17,7 @@ namespace ManagerClientServices
         private ManagerClient hookClient;
         public CommunicationDelay? CommunicationDelay { get; set; }
         public StartLeaseManager? StartLeaseManagerDelegate { get; set; }
+        public StartTransactionManager? StartTransactionManagerDelegate { get; set; }
 
         public ManagerServiceLogic(ManagerClient hookClient)
         {

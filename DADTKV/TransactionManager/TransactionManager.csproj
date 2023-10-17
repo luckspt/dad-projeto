@@ -29,6 +29,7 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\Common\Common.csproj" />
+	  <ProjectReference Include="..\ManagerServices\ManagerClientServices.csproj" />
 	</ItemGroup>
 
 </Project>

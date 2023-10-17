@@ -17,6 +17,7 @@ namespace TransactionManager.Leases
 
         public void Add(LeaseUpdates.LeaseUpdateRequest update)
         {
+            // TODO should we check if its the last?
             this.buffer.Add(update.Epoch, update);
         }
 
