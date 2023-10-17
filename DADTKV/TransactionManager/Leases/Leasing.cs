@@ -1,13 +1,23 @@
-﻿using System;
+﻿using Common;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TransactionManager.Leasing
+namespace TransactionManager.Leases
 {
     internal class Leasing
     {
+        public int Epoch { get; set; }
+        public int NextEpoch
+        {
+            get => this.Epoch + 1;
+        }
+
+        public List<Peer> LeaseManagers { get; }
+        public LeaseReceptionBuffer LeaseReceptionBuffer { get; } = new LeaseReceptionBuffer();
+
         // The id of this transaction manager
         private string managerId;
         // The keys and a queue of transaction managers that hold a lease
@@ -33,7 +43,7 @@ namespace TransactionManager.Leasing
 
         public bool HasLeases(List<string> keys)
         {
-            return keys.All(key => this.hasLease(key));
+            return keys.All(key => this.HasLease(key));
         }
 
         public bool Request(List<string> keys)

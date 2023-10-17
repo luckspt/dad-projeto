@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -49,6 +50,16 @@ namespace Common
             // https://stackoverflow.com/a/66106760
             var asString = JsonConvert.SerializeObject(this, SerializerSettings);
             return Encoding.Unicode.GetBytes(asString);
+        }
+
+        public override string ToString()
+        {
+            return "{" + string.Join("; ", this.Select(kv => kv.Key + "=" + string.Join(",", kv.Value)).ToArray()) + "}";
+        }
+
+        public string KeysToString()
+        {
+            return "[" + string.Join("; ", this.Select(kv => kv.Key).ToArray()) + "]";
         }
     }
 }

@@ -23,7 +23,7 @@ namespace LeaseManager.Paxos.Client
         {
             Logger.GetInstance().Log($"ClientPrepare.{prepare.Slot}", $"Sending Prepare (proposal={prepare.ProposalNumber}, hash={prepare.ProposerLeasesHash})");
             List<Task<global::PromiseResponse>> responses = new List<Task<global::PromiseResponse>>();
-            foreach (LMPeer acceptor in instance.Acceptors)
+            foreach (Peer acceptor in instance.Acceptors)
             {
                 // First we send all the requests
                 // TODO handle when there is an error when sending the request (maybe it's just on receiving the response?)
@@ -31,7 +31,7 @@ namespace LeaseManager.Paxos.Client
                 {
                     try
                     {
-                        return GetClient(acceptor.Address).Prepare(PrepareRequestDTO.toProtobuf(prepare));
+                        return this.GetClient(acceptor.Address).Prepare(PrepareRequestDTO.toProtobuf(prepare));
                     }
                     catch (RpcException e)
                     {
@@ -71,7 +71,7 @@ namespace LeaseManager.Paxos.Client
         {
             Logger.GetInstance().Log($"ClientAccept.{accept.Slot}", $"Sending Accept (proposal={accept.ProposalNumber})");
             List<Task<global::AcceptedResponse>> responses = new List<Task<global::AcceptedResponse>>();
-            foreach (LMPeer acceptor in instance.Acceptors)
+            foreach (Peer acceptor in instance.Acceptors)
             {
                 // First we send all the requests
                 // TODO handle when there is an error when sending the request (maybe it's just on receiving the response?)
@@ -79,7 +79,7 @@ namespace LeaseManager.Paxos.Client
                 {
                     try
                     {
-                        return GetClient(acceptor.Address).Accept(AcceptRequestDTO.toProtobuf(accept));
+                        return this.GetClient(acceptor.Address).Accept(AcceptRequestDTO.toProtobuf(accept));
                     }
                     catch (RpcException e)
                     {

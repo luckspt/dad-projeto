@@ -15,25 +15,15 @@ namespace LeaseManager.Paxos
         public List<string> TmIds { get; }
     }
 
-    public class LMPeer
-    {
-        public string Address { get; }
-
-        public LMPeer(string address)
-        {
-            this.Address = address;
-        }
-    }
-
     public class PaxosInstance
     {
         public readonly int Slot;
         public readonly PaxosServiceClient Client;
         public readonly LeaseStore SelfLeases;
         public Proposal Proposal { get; }
-        public List<LMPeer> Proposers { get; }
-        public List<LMPeer> Acceptors { get; }
-        public List<LMPeer> Learners { get; }
+        public List<Peer> Proposers { get; }
+        public List<Peer> Acceptors { get; }
+        public List<Peer> Learners { get; }
 
         private LeaseStore? value;
         private int writeTimestamp;
@@ -42,7 +32,7 @@ namespace LeaseManager.Paxos
         private Promises promises;
         private Accepteds accepteds;
 
-        public PaxosInstance(int slot, int proposerPosition, LeaseStore selfLeases, List<LMPeer> proposers, List<LMPeer> acceptors, List<LMPeer> learners)
+        public PaxosInstance(int slot, int proposerPosition, LeaseStore selfLeases, List<Peer> proposers, List<Peer> acceptors, List<Peer> learners)
         {
             this.Slot = slot;
             this.Client = new PaxosServiceClient(this);
@@ -144,7 +134,7 @@ namespace LeaseManager.Paxos
         private PromiseResponse CraftPromise(string proposerHash)
         {
             string selfHash = this.SelfLeases.GetSHA254Hash();
-            Logger.GetInstance().Log($"Paxos.{this.Slot}.{this.Proposal.Number}", $"CraftPromise (writeTimestamp={this.writeTimestamp}, proposerHash={proposerHash}, selfHash={selfHash})");
+            Logger.GetInstance().Log($"Paxos.{this.Slot}.{this.Proposal.Number}", $"CraftPromise (writeTimestamp={this.writeTimestamp}, proposerHash={proposerHash}, selfHash={selfHash}, value={this.value})");
 
             // No need to lock, we are already locked from ProcessPrepare
             PromiseResponse promise = new PromiseResponse
@@ -221,7 +211,7 @@ namespace LeaseManager.Paxos
             LeaseStore toPropose
                 = this.promises.GreatestWriteTimestamp != 0 ? this.value! : this.SelfLeases;
 
-            Logger.GetInstance().Log($"Paxos.{this.Slot}.{this.Proposal.Number}", $"SendAccept (promises.GreatestWriteTimestamp={this.promises.GreatestWriteTimestamp})");
+            Logger.GetInstance().Log($"Paxos.{this.Slot}.{this.Proposal.Number}", $"SendAccept (promises.GreatestWriteTimestamp={this.promises.GreatestWriteTimestamp}, valueHash={toPropose.GetSHA254Hash()}, value={toPropose})");
             AcceptRequest accept = new AcceptRequest
             {
                 Slot = this.Slot,
@@ -290,7 +280,7 @@ namespace LeaseManager.Paxos
                     if (count == neededToAccept)
                         // TODO maybe consensus is not reached because of
                         // - https://en.wikipedia.org/wiki/Paxos_(computer_science)#Basic_Paxos_where_an_Acceptor_accepts_Two_Different_Values
-                        this.ConsensusReached();
+                        this.ConsensusReached(accepted.Value);
                     return false;
                 }
 
@@ -301,9 +291,9 @@ namespace LeaseManager.Paxos
         /// <summary>
         /// To execute when consensus is reached
         /// </summary>
-        private void ConsensusReached()
+        private void ConsensusReached(LeaseStore value)
         {
-            Logger.GetInstance().Log($"Paxos.{this.Slot}.{this.Proposal.Number}", $"Concensus Reached!");
+            Logger.GetInstance().Log($"Paxos.{this.Slot}.{this.Proposal.Number}", $"Concensus Reached on {value}!");
             // No need to lock, we are already locked from ProcessAccepted
             // TODO can we garbage collect this instance since it reached consensus?
         }

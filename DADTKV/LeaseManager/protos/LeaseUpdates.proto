@@ -7,17 +7,14 @@ service LeaseUpdatesService {
 // Structures
 message LeaseUpdate {
 	string key = 1;
-	// TODO: is epoch even needed?
-	// -- Because TMs *don't* have a notion of epochs
-	// -- but! can help when we have paralell updates because of parallel paxos instances
-	int32 epoch = 2;
-	repeated string targetTMIds = 3;
+	repeated string targetTMIds = 2;
 }
 // ------------------------------
 
 // Sending out updates
 message LeaseUpdateRequest {
-	repeated LeaseUpdate leases = 1;
+	int32 epoch = 1;
+	repeated LeaseUpdate leases = 2;
 }
 
 message LeaseUpdateResponse {
