@@ -1,3 +1,4 @@
+using Common;
 using Manager.Manager;
 using Manager.StatusHook;
 using Parser;
@@ -9,6 +10,7 @@ namespace Manager
 {
     public partial class Main : Form
     {
+        public static ManagerClient ManagerClient { get; } = new ManagerClient();
         public static List<Pair<ClientConfigLine, EntityStatus>> Clients { get; private set; } = new List<Pair<ClientConfigLine, EntityStatus>>();
         public static List<Pair<ServerConfigLine, EntityStatus>> TransactionManagers { get; private set; } = new List<Pair<ServerConfigLine, EntityStatus>>();
         public static List<Pair<ServerConfigLine, EntityStatus>> LeaseManagers { get; private set; } = new List<Pair<ServerConfigLine, EntityStatus>>();
@@ -186,14 +188,17 @@ namespace Manager
             }
 
             // Start TMs
-            // foreach (Pair<ServerConfigLine, Color> tm in this.transactionManagers)
-            // Process.Start(solutionDirectory + "/TransactionManager/bin/Debug/net6.0/TransactionManager.exe");
+            foreach (Pair<ServerConfigLine, EntityStatus> tm in Main.TransactionManagers)
+            {
+                string arguments = $"{Program.ManagerAddress} {tm.First.ID} {tm.First.Url}";
+                Process.Start(solutionDirectory + "/TransactionManager/bin/Debug/net6.0/TransactionManager.exe", arguments);
+            }
 
             Thread thread = new Thread(() =>
             {
                 // Wait for all LM and TM processes to start
                 bool allLMsStarted = false;
-                bool allTMsStarted = true;
+                bool allTMsStarted = false;
                 while (true)
                 {
                     if (Main.LeaseManagers.All(lm => lm.Second.Status == LMStatus.Idle))
@@ -213,7 +218,15 @@ namespace Manager
                 List<string> tmAddresses = Main.TransactionManagers.Select(tm => tm.First.Url).ToList();
                 for (int i = 0; i < Main.LeaseManagers.Count; i++)
                 {
-                    new ManagerClient().StartLeaseManager(Main.LeaseManagers[i].First.Url, lmAddresses, tmAddresses, i + 1);
+                    Logger.GetInstance().Log("Main", $"Starting LM {Main.LeaseManagers[i].First.ID}");
+                    Main.ManagerClient.StartLeaseManager(Main.LeaseManagers[i].First.Url, lmAddresses, tmAddresses, i + 1);
+                }
+
+                // Tell all TMs to start receiving requests
+                for (int i = 0; i < Main.TransactionManagers.Count; i++)
+                {
+                    Logger.GetInstance().Log("Main", $"Starting TM {Main.TransactionManagers[i].First.ID}");
+                    Main.ManagerClient.StartTransactionManager(Main.TransactionManagers[i].First.Url, lmAddresses, tmAddresses);
                 }
 
                 // Start Clients
@@ -278,8 +291,7 @@ namespace Manager
             Pair<ServerConfigLine, EntityStatus> lm = Main.LeaseManagers.Find(lm => lm.First.ID == id)!;
             if (lm == null) return;
 
-            // TODO don't create everytime
-            new ManagerClient().Crash(lm.First.Url);
+            Main.ManagerClient.Crash(lm.First.Url);
             lm.Second.Status = LMStatus.Crashed;
         }
     }

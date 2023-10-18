@@ -14,10 +14,10 @@ namespace Manager
         /// <summary>
         /// Application entrypoint
         /// </summary>
-        /// <param name="args">string[] { managerAddress, entityId, entityAddress, slots, slotDurationMs }</param>
+        /// <param name="args">string[] { managerAddress, entityId, entityAddress }</param>
         static void Main(string[] args)
         {
-            Logger.GetInstance().Log("TM", "Starting Lease Manager...");
+            Logger.GetInstance().Log("TM", "Starting Transaction Manager...");
 
             Program.ManagerClient = new ManagerClientServices.ManagerClient(HostPort.FromString(args[0]), args[1], EntityType.TransactionManager);
             TransactionManager.TransactionManager tm = new TransactionManager.TransactionManager(args[1]);
@@ -46,8 +46,8 @@ namespace Manager
             Logger.GetInstance().Log("gRPC", $"Server Started - I am {args[2]}");
 
 
-            // Starting Paxos is made remotely by the Manager so we know about the peers
-            // it will call StartLeaseManager
+            // Starting is made remotely by the Manager so we know about the peers
+            // it will call StartTransactionManager
 
             // Wait indefinitely
             Program.GrpcServer.ShutdownTask.Wait();
@@ -55,7 +55,7 @@ namespace Manager
 
         private static bool StartTransactionManager(List<string> leaseManagersAddresses, List<string> transactionManagersAddresses, TransactionManager.TransactionManager tm, string myAddress)
         {
-            // Remove myself from the list of lease managers
+            // Remove myself from the list of transaction managers
             transactionManagersAddresses.Remove(myAddress);
 
             tm.Start(leaseManagersAddresses, transactionManagersAddresses);

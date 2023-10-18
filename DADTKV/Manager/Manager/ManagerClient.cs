@@ -51,6 +51,15 @@ namespace Manager.Manager
             });
         }
 
+        public void StartTransactionManager(string address, List<string> leaseManagersAddresses, List<string> transactionManagersAddresses)
+        {
+            this.GetClient(address).StartTransactionManager(new StartTransactionManagerRequest()
+            {
+                LeaseManagersAddresses = { leaseManagersAddresses },
+                TransactionManagersAddresses = { transactionManagersAddresses },
+            });
+        }
+
         private ManagerService.ManagerServiceClient GetClient(string address)
         {
             GrpcChannel serverChannel = GrpcChannel.ForAddress(address);

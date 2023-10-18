@@ -18,7 +18,7 @@ namespace LeaseManager.LeaseRequesting
 
         public override Task<RequestLeasesResponse> RequestLeases(RequestLeasesRequest request, ServerCallContext context)
         {
-            return Task.FromResult(new RequestLeasesResponse() { Ok = this.serverLogic.RequestLeases(request.RequesterTMId, request.Keys.ToList()) });
+            return Task.FromResult(new RequestLeasesResponse() { Ok = this.serverLogic.RequestLeases(request.RequesterTMId, request.LeaseKeys.ToList()) });
         }
     }
 }

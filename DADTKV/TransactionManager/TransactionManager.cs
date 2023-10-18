@@ -37,19 +37,30 @@ namespace TransactionManager
         {
             this.Leasing = new Leasing(this.managerId, leaseManagersAddresses.Select(address => new Peer(address)).ToList());
             this.TransactionManagers = transactionManagersAddresses.Select(address => new Peer(address)).ToList();
+
+            Task.Run(() =>
+            {
+                for (int i = 0; i < 100; i++)
+                {
+                    this.SimulateRequests();
+                    Thread.Sleep(1000);
+                }
+            });
         }
 
-        public List<DadInt> Read(String clientId, List<String> keysToRead)
+        public void SimulateRequests()
         {
-            // TODO: implement
-            return null;
-        }
+            // generate a random list of 1 to 5 keys non-numeric keys
+            Random random = new Random();
+            int nKeys = random.Next(1, 6);
+            List<string> keys = new List<string>();
+            for (int i = 0; i < nKeys; i++)
+            {
+                keys.Add("key" + random.Next(0, 1000));
+            }
 
-        public List<DadInt> Write(String clientId, List<DadInt> toWrite)
-        {
-            // TODO: implement
-            // TODO: propagate to other transaction managers
-            return null;
+            Logger.GetInstance().Log("SimulateRequests", $"Requesting leases (leases=[{string.Join(", ", keys)}])");
+            this.Leasing.Request(keys);
         }
     }
 }

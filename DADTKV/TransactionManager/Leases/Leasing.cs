@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TransactionManager.Leases.LeaseRequesting;
 
 namespace TransactionManager.Leases
 {
@@ -16,7 +17,8 @@ namespace TransactionManager.Leases
         }
 
         public List<Peer> LeaseManagers { get; }
-        public LeaseReceptionBuffer LeaseReceptionBuffer { get; } = new LeaseReceptionBuffer();
+        public LeaseReceptionBuffer LeaseReceptionBuffer { get; }
+        public LeaseRequestingServiceClient RequestingServiceClient { get; }
 
         // The id of this transaction manager
         private string managerId;
@@ -28,6 +30,8 @@ namespace TransactionManager.Leases
             this.managerId = managerId;
             this.LeaseManagers = leaseManagers;
             this.leases = new Dictionary<string, List<string>>();
+            this.LeaseReceptionBuffer = new LeaseReceptionBuffer();
+            this.RequestingServiceClient = new LeaseRequestingServiceClient(this);
         }
 
         public bool HasToFree(string key)
@@ -49,10 +53,11 @@ namespace TransactionManager.Leases
 
         public bool Request(List<string> keys)
         {
-            // TODO: implement
-            // TODO: contract programming, so no need to validate if we already have the keys
-            // TODO: request to ALL lease managers; need to add a uid because of broadcast?
-            return true;
+            return this.RequestingServiceClient.RequestLeases(new LeaseRequesting.RequestLeasesRequest()
+            {
+                RequesterTMId = this.managerId,
+                LeaseKeys = keys,
+            });
         }
 
         public bool Update(Dictionary<string, List<string>> newKeys)
