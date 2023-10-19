@@ -1,4 +1,5 @@
 ﻿using Parser.Parsers;
+using Parser.Parsers.ClientCommand;
 
 namespace Parser
 {

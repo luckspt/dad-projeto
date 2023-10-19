@@ -230,8 +230,14 @@ namespace Manager
                 }
 
                 // Start Clients
-                // foreach (Pair<ClientConfigLine, Color> client in this.clients)
-                // Process.Start(solutionDirectory + "/DADTKV/bin/Debug/net6.0/DADTKV.exe", client.First.ScriptPath);
+                for (int i = 0; i < Main.Clients.Count; i++)
+                {
+                    Pair<ClientConfigLine, EntityStatus> client = Main.Clients[i];
+                    Logger.GetInstance().Log("Main", $"Starting Client {client.First.ID}");
+
+                    string arguments = $"{client.First.ID} {client.First.ScriptPath} {i % Main.TransactionManagers.Count} {string.Join(" ", Main.TransactionManagers.Select(tm => tm.First.Url))}";
+                    Process.Start(solutionDirectory + "/Client/bin/Debug/net6.0/Client.exe", arguments);
+                }
             });
 
             // Start but don't join so we don't block
@@ -251,7 +257,7 @@ namespace Manager
             // Check if its the solution or if the project was open some other way
             do
             {
-                string[] projects = new string[] { "ConfigParser", "Manager", "DADTKV", "LeaseManager", "TransactionManager" };
+                string[] projects = new string[] { "Client", "Common", "DADTKV", "LeaseManager", "Manager", "ManagerClientServices", "ConfigParser", "TransactionManager" };
                 if (projects.All(project => Directory.Exists(solutionDirectory + "/" + project)))
                     break;
 
