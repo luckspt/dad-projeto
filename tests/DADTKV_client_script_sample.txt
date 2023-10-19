@@ -16,3 +16,6 @@ T ("a-key-name","another-key-name") (<"name1",10>,<"name2",20>)
 T () (<"name3",456>)
 # wait command (in milliseconds)
 W 5000
+
+
+habib: enviar email à prof teresa chambel, tendo em conta os limites das turmas (a prof enviou num email as ocupações), para escolher a turma a IG

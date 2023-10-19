@@ -1,16 +1,18 @@
-﻿using System;
+﻿using DADTKV;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace Parser.Parsers
+namespace Parser.Parsers.ClientCommand
 {
-    public struct ReadWriteSetConfigLine : ConfigLine
+    public struct ReadWriteSetConfigLine : ClientCommandConfigLine
     {
-        public string[] ReadSet;
-        public Dictionary<string, int> WriteDict;
+        public ClientCommandConfigType Type => ClientCommandConfigType.ReadWriteSet;
+        public List<string> ReadSet;
+        public List<DadInt> WriteSet;
     }
 
     internal class ReadWriteSetParser : Parser
@@ -20,17 +22,20 @@ namespace Parser.Parsers
         private Regex writeSetRegex = new Regex(@"<""([\w-]+)"",(\d+)>", RegexOptions.Compiled);
         public Tuple<ConfigType, ConfigLine>? Result(string line)
         {
-            Match match = this.regex.Match(line);
+            Match match = regex.Match(line);
             if (!match.Success) return null;
 
             return new Tuple<ConfigType, ConfigLine>(
-                ConfigType.ReadWriteSet,
+                ConfigType.ClientCommand,
                 new ReadWriteSetConfigLine
                 {
-                    ReadSet = readSetRegex.Matches(match.Groups[1].Value).Select(m => m.Groups[1].Value).ToArray(),
-                    WriteDict = writeSetRegex.Matches(match.Groups[2].Value)
+                    ReadSet = readSetRegex.Matches(match.Groups[1].Value)
+                    .Select(m => m.Groups[1].Value)
+                    .ToList(),
+                    WriteSet = writeSetRegex.Matches(match.Groups[2].Value)
                     .Select(s => writeSetRegex.Match(s.Value))
-                    .ToDictionary(m => m.Groups[1].Value,m => int.Parse(m.Groups[2].Value))
+                    .Select(m => new DadInt(m.Groups[1].Value, int.Parse(m.Groups[2].Value)))
+                    .ToList()
                 }
             );
         }

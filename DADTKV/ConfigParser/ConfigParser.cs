@@ -16,12 +16,11 @@ namespace Parser
         SlotDuration,
         // Server State (F)
         ServerState,
-        // Client: ReadriteSet (T)
-        ReadWriteSet,
-        // Client: Wait (W)
-        Wait,
+        // A Client Command (T/W/S)
+        ClientCommand,
     }
 
+    // Is extended by each parser
     public interface ConfigLine
     {
     }
@@ -39,7 +38,7 @@ namespace Parser
 
         public Dictionary<ConfigType, List<ConfigLine>> Config { get; }
 
-        // TODO: add status
+        // TODO: add status (client script)
         public ConfigParser(string path) : this(path, new List<Parser>() { new ClientParser(), new ServerParser(), new ServerStateParser(), new StartTimeParser(), new SlotsParser(), new SlotDurationParser(), new ReadWriteSetParser(), new WaitParser() }, "#")
         { }
 

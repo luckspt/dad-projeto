@@ -22,6 +22,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Common", "Common\Common.csp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Client", "Client\Client.csproj", "{1C68A1E2-3EDE-412D-A1FD-437EBB40FFA6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DADTKV", "DADTKV\DADTKV.csproj", "{63B3A24B-CA93-453F-89F9-D33B39B53475}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -56,6 +58,10 @@ Global
 		{1C68A1E2-3EDE-412D-A1FD-437EBB40FFA6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1C68A1E2-3EDE-412D-A1FD-437EBB40FFA6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1C68A1E2-3EDE-412D-A1FD-437EBB40FFA6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{63B3A24B-CA93-453F-89F9-D33B39B53475}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63B3A24B-CA93-453F-89F9-D33B39B53475}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{63B3A24B-CA93-453F-89F9-D33B39B53475}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63B3A24B-CA93-453F-89F9-D33B39B53475}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

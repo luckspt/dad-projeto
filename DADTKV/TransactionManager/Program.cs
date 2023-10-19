@@ -43,7 +43,7 @@ namespace Manager
 
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
             Program.GrpcServer.Start();
-            Logger.GetInstance().Log("gRPC", $"Server Started - I am {args[2]}");
+            Logger.GetInstance().Log("gRPC", $"Server Started - I am {args[1]} at {args[2]}");
 
 
             // Starting is made remotely by the Manager so we know about the peers

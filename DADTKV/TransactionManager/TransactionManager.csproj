@@ -29,7 +29,7 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\Common\Common.csproj" />
-	  <ProjectReference Include="..\ManagerServices\ManagerClientServices.csproj" />
+	  <ProjectReference Include="..\ManagerClientServices\ManagerClientServices.csproj" />
 	</ItemGroup>
 
 </Project>

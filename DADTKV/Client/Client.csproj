@@ -7,4 +7,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Common\Common.csproj" />
+    <ProjectReference Include="..\ConfigParser\Parser.csproj" />
+    <ProjectReference Include="..\DADTKV\DADTKV.csproj" />
+  </ItemGroup>
+
 </Project>

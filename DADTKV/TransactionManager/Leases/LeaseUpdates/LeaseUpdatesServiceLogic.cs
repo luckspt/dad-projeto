@@ -52,8 +52,8 @@ namespace TransactionManager.Leases.LeaseUpdates
         private void ApplyUpdate(LeaseUpdateRequest update)
         {
             // We have a majority - its an update
-            this.leasing.LeaseReceptionBuffer.Add(updates);
-            this.receptionCounts.Remove(updates.Epoch); // TODO RELATED TO THE FIRST TODO 
+            this.leasing.LeaseReceptionBuffer.Add(update);
+            this.receptionCounts.Remove(update.Epoch); // TODO RELATED TO THE FIRST TODO 
 
             // TODO lease reception buffer TO the actual leases
             //  - check for conflicting leases, if we need to release any

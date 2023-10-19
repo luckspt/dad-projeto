@@ -5,10 +5,11 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace Parser.Parsers
+namespace Parser.Parsers.ClientCommand
 {
-    public struct WaitConfigLine : ConfigLine
+    public struct WaitConfigLine : ClientCommandConfigLine
     {
+        public ClientCommandConfigType Type => ClientCommandConfigType.ReadWriteSet;
         public int Time;
     }
 
@@ -17,11 +18,11 @@ namespace Parser.Parsers
         private Regex regex = new Regex(@"^W (\d+) *$", RegexOptions.Compiled);
         public Tuple<ConfigType, ConfigLine>? Result(string line)
         {
-            Match match = this.regex.Match(line);
+            Match match = regex.Match(line);
             if (!match.Success) return null;
 
             return new Tuple<ConfigType, ConfigLine>(
-                ConfigType.Wait,
+                ConfigType.ClientCommand,
                 new WaitConfigLine
                 {
                     Time = int.Parse(match.Groups[1].Value)
