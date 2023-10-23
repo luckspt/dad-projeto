@@ -68,7 +68,6 @@ namespace LeaseManager.Paxos
             {
                 this.Proposal.NextProposalNumber();
                 Logger.GetInstance().Log($"Paxos.{this.Slot}.{this.Proposal.Number}", $"New Proposal Round");
-                // TODO Will this cause issues because we are already locked?
                 this.SendPrepare();
             }
         }
@@ -182,7 +181,7 @@ namespace LeaseManager.Paxos
                     //  of all responding proposers if we/they don't have some values
                 }
 
-                //  == will make it so we only accept the majority once
+                // == will make it so we only accept the majority once
                 if (this.promises.ReceivedCount == neededToAccept)
                     this.ReceivedMajorityPromises();
 

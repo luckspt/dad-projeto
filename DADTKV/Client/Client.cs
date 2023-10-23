@@ -29,7 +29,7 @@ namespace Client
             this.commands = commands;
             this.transactionManagers = transactionManagersAddresses;
             this.currentTMIdx = currentTMIdx;
-            this.transactions = new Transactions();
+            this.transactions = new Transactions(CurrentTransactionManager);
         }
 
         public void Start()

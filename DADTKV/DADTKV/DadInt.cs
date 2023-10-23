@@ -1,4 +1,7 @@
-﻿using System;
+﻿// DadIntValue is also defined on TransactionManager. Beware when changing.
+global using DadIntValue = System.Int32;
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,9 +12,9 @@ namespace DADTKV
     public class DadInt
     {
         public string Key { get; }
-        public int Value { get; set; }
+        public DadIntValue Value { get; set; }
 
-        public DadInt(string key, int value)
+        public DadInt(string key, DadIntValue value)
         {
             Key = key;
             Value = value;

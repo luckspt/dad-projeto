@@ -1,0 +1,26 @@
+﻿syntax = "proto3";
+
+service TransactionRunningService
+{
+    rpc RunTransaction(RunTransactionRequest) returns (RunTransactionResponse);
+}
+
+message RPCDadInt
+{
+    string key = 1;
+    int32 value = 2;
+}
+
+// Apply
+message RunTransactionRequest
+{
+    string clientId = 1;
+    repeated string keysToRead = 2;
+	repeated RPCDadInt keysToWrite = 3;
+}
+
+message RunTransactionResponse
+{
+	repeated RPCDadInt valuesRead = 1;
+}
+// ------------------------------

@@ -38,13 +38,13 @@ namespace TransactionManager.Leases.LeaseRequesting
 
     internal class TransactionsServiceClient
     {
-        public List<DadInt> ApplyTransaction(Peer server, List<string> keysToRead, List<DadInt> keysToWrite)
+        public List<DadInt> RunTransaction(Peer server, List<string> keysToRead, List<DadInt> keysToWrite)
         {
             Logger.GetInstance().Log($"ClientTransactionsService", $"Reading {string.Join(", ", keysToRead)} and writing {string.Join(", ", keysToWrite)}");
 
             try
             {
-                ApplyTransactionResponse response = this.GetClient(server.Address).ApplyTransaction(new ApplyTransactionRequest
+                RunTransactionResponse response = this.GetClient(server.Address).RunTransaction(new RunTransactionRequest
                 {
                     KeysToRead = { keysToRead },
                     KeysToWrite = { DadIntListDTO.toProtobuf(keysToWrite) },
@@ -59,10 +59,10 @@ namespace TransactionManager.Leases.LeaseRequesting
             }
         }
 
-        private TransactionsService.TransactionsServiceClient GetClient(string address)
+        private TransactionRunningService.TransactionRunningServiceClient GetClient(string address)
         {
             GrpcChannel serverChannel = GrpcChannel.ForAddress(address);
-            return new TransactionsService.TransactionsServiceClient(serverChannel);
+            return new TransactionRunningService.TransactionRunningServiceClient(serverChannel);
         }
     }
 }

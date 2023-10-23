@@ -1,10 +1,13 @@
 ﻿using Common;
+using DADTKV;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TransactionManager.Leases;
+using TransactionManager.Store;
+using TransactionManager.Transactions;
 
 namespace TransactionManager
 {
@@ -24,13 +27,14 @@ namespace TransactionManager
         // Leasing service
         public Leasing Leasing { get; private set; }
         public List<Peer> TransactionManagers { get; private set; }
-
-        // Key-value store
-        private Dictionary<String, int> kvStore;
+        public KVStore KVStore { get; private set; }
+        public TransactionRequestsBuffer TransactionsBuffer { get; private set; }
 
         public TransactionManager(String managerId)
         {
             this.managerId = managerId;
+            this.KVStore = new KVStore();
+            this.TransactionsBuffer = new TransactionRequestsBuffer();
         }
 
         public void Start(List<string> leaseManagersAddresses, List<string> transactionManagersAddresses)
@@ -38,29 +42,56 @@ namespace TransactionManager
             this.Leasing = new Leasing(this.managerId, leaseManagersAddresses.Select(address => new Peer(address)).ToList());
             this.TransactionManagers = transactionManagersAddresses.Select(address => new Peer(address)).ToList();
 
+            // Thread to run the transactions (sequentially)
             Task.Run(() =>
             {
-                for (int i = 0; i < 100; i++)
-                {
-                    this.SimulateRequests();
-                    Thread.Sleep(1000);
-                }
+                while (true)
+                    this.HandleTransactionRequests();
             });
         }
 
-        public void SimulateRequests()
+        private void HandleTransactionRequests()
         {
-            // generate a random list of 1 to 5 keys non-numeric keys
-            Random random = new Random();
-            int nKeys = random.Next(1, 6);
-            List<string> keys = new List<string>();
-            for (int i = 0; i < nKeys; i++)
+            // TODO can be improved by using monitors
+            if (this.TransactionsBuffer.Count != 0)
             {
-                keys.Add("key" + random.Next(0, 1000));
-            }
+                Transaction transaction = this.TransactionsBuffer.Take();
 
-            Logger.GetInstance().Log("SimulateRequests", $"Requesting leases (leases=[{string.Join(", ", keys)}])");
-            this.Leasing.Request(keys);
+                List<string> keysToReadKeys = transaction.ReadOperations.Select(t => t.Key).ToList();
+                List<string> keysToWriteKeys = transaction.WriteOperations.Select(t => t.Key).ToList();
+
+                Dictionary<string, bool> allKeys = keysToReadKeys.Concat(keysToWriteKeys).ToDictionary(key => key, key => this.Leasing.HasLease(key));
+                bool hasAllLeases = false;
+
+                while (!hasAllLeases)
+                {
+                    hasAllLeases = allKeys.All(x => x.Value == true);
+                    // TODO Monitors on Lease update (and lease freeing to make this method advance)
+                }
+
+                // Now we have all the leases
+                // Execute the reads --
+                List<KeyValuePair<string, StoreDadInt>> keysToRead = this.KVStore.Where(x => keysToReadKeys.Contains(x.Key)).ToList();
+
+                // return keysRead to client
+                List<DadInt> keysRead = keysToRead.Select(x => new DadInt(x.Key, x.Value.Value)).ToList();
+                // --
+
+                // Execute the writes --
+                // TODO replicate
+                // --
+
+                // Check if there is any lease that's conflicting after executing this transaction --
+                List<string> conflictingLeases = allKeys
+                        .Where(x => this.Leasing.IsConflicting(x.Key))
+                        .Select(x => x.Key)
+                        .ToList();
+
+                // Free them
+                if (conflictingLeases.Count > 0)
+                    this.Leasing.Free(conflictingLeases);
+                // --
+            }
         }
     }
 }

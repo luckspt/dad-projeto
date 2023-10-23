@@ -244,7 +244,7 @@ namespace Manager
             thread.Start();
 
             // Focus the manager
-            // TODO: doesn't work but its fine
+            // Doesn't work but its fine
             this.BringToFront();
         }
 

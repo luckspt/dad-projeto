@@ -34,7 +34,15 @@ namespace TransactionManager.Leases
             this.RequestingServiceClient = new LeaseRequestingServiceClient(this);
         }
 
-        public bool HasToFree(string key)
+        public List<string> GetOwnedLeases()
+        {
+            return this.leases
+                .Where(lease => this.HasLease(lease.Key))
+                .Select(lease => lease.Key)
+                .ToList();
+        }
+
+        public bool IsConflicting(string key)
         {
             // contract programming, so requires this.hasLease(key)
             return leases[key].Count > 1;
@@ -42,7 +50,7 @@ namespace TransactionManager.Leases
 
         public bool HasLease(string key)
         {
-            return leases.ContainsKey(key) &&
+            return leases[key].Count != 0 &&
                 leases[key][0].Equals(this.managerId);
         }
 

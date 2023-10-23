@@ -1,13 +1,23 @@
-﻿namespace DADTKV.Transactions
+﻿using Common;
+using TransactionManager.Leases.LeaseRequesting;
+
+namespace DADTKV.Transactions
 {
     public class Transactions
     {
+        private TransactionsServiceClient client = new TransactionsServiceClient();
+        private Peer transactionManager;
+
+        public Transactions(Peer transactionManager)
+        {
+            this.transactionManager = transactionManager;
+        }
+
         public List<DadInt> TxSubmit(string clientId, List<string> toRead, List<DadInt> toWrite)
         {
             try
             {
-                // Return the list of values read
-                return new List<DadInt>();
+                return this.client.RunTransaction(this.transactionManager, toRead, toWrite);
             }
             catch
             {

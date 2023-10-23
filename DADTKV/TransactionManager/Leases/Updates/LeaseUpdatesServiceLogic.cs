@@ -53,10 +53,20 @@ namespace TransactionManager.Leases.LeaseUpdates
         {
             // We have a majority - its an update
             this.leasing.LeaseReceptionBuffer.Add(update);
-            this.receptionCounts.Remove(update.Epoch); // TODO RELATED TO THE FIRST TODO 
+            // this.receptionCounts.Remove(update.Epoch); // TODO RELATED TO THE FIRST TODO 
 
             // TODO lease reception buffer TO the actual leases
-            //  - check for conflicting leases, if we need to release any
+
+            // Check if there is any lease that's conflicting after executing this transaction --
+            List<string> conflictingLeases = this.leasing.GetOwnedLeases()
+                    .Where(lease => this.leasing.IsConflicting(lease))
+                    .ToList();
+
+            // Free them
+            // TODO how do we handle wanting to apply a transaction but having to free the lease?
+            //if (conflictingLeases.Count > 0)
+            // this.leasing.Free(conflictingLeases);
+            // --
         }
     }
 }

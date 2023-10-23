@@ -3,6 +3,7 @@ using Common;
 using System.Text.RegularExpressions;
 using TransactionManager.Leases;
 using TransactionManager.Leases.LeaseUpdates;
+using TransactionManager.Transactions;
 
 namespace Manager
 {
@@ -27,6 +28,7 @@ namespace Manager
                 => Program.StartTransactionManager(leaseManagersAddresses, transactionManagersAddresses, tm, args[2]);
 
             LeaseUpdatesServiceLogic leaseUpdatesServiceLogic = new LeaseUpdatesServiceLogic(tm.Leasing);
+            TransactionRunningServiceLogic transactionRunningServiceLogic = new TransactionRunningServiceLogic(tm);
 
             // Set server port
             HostPort hostPort = HostPort.FromString(args[2]);
@@ -36,7 +38,7 @@ namespace Manager
                 Services = {
                     ManagerService.BindService(new ManagerClientServices.ManagerService(managerServiceLogic)),
                     global::LeaseUpdatesService.BindService(new TransactionManager.Leases.LeaseUpdates.LeaseUpdatesService(leaseUpdatesServiceLogic)),
-                    // TODO client requests server
+                    global::TransactionRunningService.BindService(new TransactionManager.Transactions.TransactionRunningService(transactionRunningServiceLogic))
                 },
                 Ports = { serverPort }
             };

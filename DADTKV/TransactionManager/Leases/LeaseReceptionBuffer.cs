@@ -8,6 +8,7 @@ namespace TransactionManager.Leases
 {
     /// <summary>
     /// Store a buffer of the received leases for each epoch
+    /// So that the TM sees the leases sorted by epoch and not at random
     /// 
     /// It is ordered by epoch
     /// </summary>
