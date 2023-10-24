@@ -29,6 +29,7 @@ namespace TransactionManager.Leases
         {
             this.managerId = managerId;
             this.LeaseManagers = leaseManagers;
+            this.Epoch = 0;
             this.leases = new Dictionary<string, List<string>>();
             this.LeaseReceptionBuffer = new LeaseReceptionBuffer();
             this.RequestingServiceClient = new LeaseRequestingServiceClient(this);

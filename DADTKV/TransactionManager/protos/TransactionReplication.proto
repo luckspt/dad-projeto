@@ -1,0 +1,33 @@
+﻿syntax = "proto3";
+
+service TransactionReplicationService {
+	rpc URBBroadcast(URBBroadcastRequest) returns (URBBroadcastResponse);
+	rpc BEBDeliver(BEBDeliverRequest) returns (BEBDeliverResponse);
+}
+
+message URBMessage {
+	string senderId = 1;
+	int epoch = 2;
+	string key = 3;
+	int keyLastWriteTimestamp = 4;
+}
+
+// URBBroadcast
+message URBBroadcastRequest {
+	URBMessage message = 1;
+}
+
+message URBBroadcastResponse {
+	bool ok = 1;
+}
+// ------------------------------
+
+// Commit
+message BEBDeliverRequest {
+	URBMessage message = 1;
+}
+
+message BEBDeliverResponse {
+	int ok = 1;
+}
+// ------------------------------
