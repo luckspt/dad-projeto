@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TransactionManager.Transactions
+namespace TransactionManager.Transactions.Replication
 {
     internal class TransactionRunningService : global::TransactionRunningService.TransactionRunningServiceBase
     {

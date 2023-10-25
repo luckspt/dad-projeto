@@ -1,4 +1,5 @@
-﻿using Grpc.Core;
+﻿using Common;
+using Grpc.Core;
 using Grpc.Net.Client;
 using System;
 using System.Collections.Generic;
@@ -41,22 +42,22 @@ namespace Manager.Manager
             });
         }
 
-        public void StartLeaseManager(string address, List<string> leaseManagersAddresses, List<string> transactionManagersAddresses, int proposerPosition)
+        public void StartLeaseManager(string address, List<Peer> leaseManagersAddresses, List<Peer> transactionManagersAddresses, int proposerPosition)
         {
             this.GetClient(address).StartLeaseManager(new StartLeaseManagerRequest()
             {
-                LeaseManagersAddresses = { leaseManagersAddresses },
-                TransactionManagersAddresses = { transactionManagersAddresses },
+                LeaseManagersAddresses = { leaseManagersAddresses.Select(x => x.FullRepresentation()) },
+                TransactionManagersAddresses = { transactionManagersAddresses.Select(x => x.FullRepresentation()) },
                 ProposerPosition = proposerPosition,
             });
         }
 
-        public void StartTransactionManager(string address, List<string> leaseManagersAddresses, List<string> transactionManagersAddresses)
+        public void StartTransactionManager(string address, List<Peer> leaseManagersAddresses, List<Peer> transactionManagersAddresses)
         {
             this.GetClient(address).StartTransactionManager(new StartTransactionManagerRequest()
             {
-                LeaseManagersAddresses = { leaseManagersAddresses },
-                TransactionManagersAddresses = { transactionManagersAddresses },
+                LeaseManagersAddresses = { leaseManagersAddresses.Select(x => x.FullRepresentation()) },
+                TransactionManagersAddresses = { transactionManagersAddresses.Select(x => x.FullRepresentation()) },
             });
         }
 

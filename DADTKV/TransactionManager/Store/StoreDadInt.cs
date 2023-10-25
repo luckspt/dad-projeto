@@ -14,9 +14,9 @@ namespace TransactionManager.Store
         public DadIntValue Value { get; set; }
 
         // TODO when do we use this?
-        // TODO when do we change this? Make them setters?
-        public int LastWriteEpoch { get; }
-        public int LastWriteTimestamp { get; }
-        public string LastWriteTM { get; }
+        // TODO change the values somewhere 
+        public int LastWriteEpoch { get; set; }
+        public int EpochWriteVersion { get; set; }
+        public string LastWriteTM { get; } // TODO what is this for
     }
 }

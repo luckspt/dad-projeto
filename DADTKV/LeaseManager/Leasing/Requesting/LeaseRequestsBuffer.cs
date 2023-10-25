@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LeaseManager.LeaseRequesting
+namespace LeaseManager.Leasing.Requesting
 {
     internal class LeaseRequestsBuffer
     {
@@ -13,7 +13,7 @@ namespace LeaseManager.LeaseRequesting
 
         public LeaseRequestsBuffer()
         {
-            this.buffer = new LeaseStore();
+            buffer = new LeaseStore();
         }
 
         /// <summary>
@@ -27,17 +27,17 @@ namespace LeaseManager.LeaseRequesting
             {
                 foreach (string key in keys)
                 {
-                    if (this.buffer.ContainsKey(key))
+                    if (buffer.ContainsKey(key))
                     {
                         // https://stackoverflow.com/a/12172412
-                        int idx = this.buffer[key].BinarySearch(managerId);
+                        int idx = buffer[key].BinarySearch(managerId);
                         if (idx < 0) idx = ~idx;
 
-                        this.buffer[key].Insert(idx, managerId);
+                        buffer[key].Insert(idx, managerId);
                     }
                     else
                     {
-                        this.buffer.Add(key, new List<string> { managerId });
+                        buffer.Add(key, new List<string> { managerId });
                     }
                 }
             }
@@ -48,12 +48,12 @@ namespace LeaseManager.LeaseRequesting
         /// </summary>
         public LeaseStore GetBuffer()
         {
-            return this.buffer.Copy();
+            return buffer.Copy();
         }
 
         public void Clear()
         {
-            this.buffer.Clear();
+            buffer.Clear();
         }
     }
 }

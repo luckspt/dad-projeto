@@ -46,13 +46,14 @@ namespace TransactionManager.Leases
         public bool IsConflicting(string key)
         {
             // contract programming, so requires this.hasLease(key)
-            return leases[key].Count > 1;
+            return this.leases[key].Count > 1;
         }
 
         public bool HasLease(string key)
         {
-            return leases[key].Count != 0 &&
-                leases[key][0].Equals(this.managerId);
+            return this.leases.ContainsKey(key) &&
+                this.leases[key].Count != 0 &&
+                this.leases[key][0].Equals(this.managerId);
         }
 
         public bool HasLeases(List<string> keys)
@@ -71,21 +72,16 @@ namespace TransactionManager.Leases
 
         public bool Update(Dictionary<string, List<string>> newKeys)
         {
-            // TODO: check and free lease if needed
             // Updates are received asynchronously, so better to lock it
             lock (this)
             {
                 foreach (string key in newKeys.Keys)
                 {
                     // TODO: should we copy or just reference?
-                    if (leases.ContainsKey(key))
-                    {
-                        leases[key].AddRange(newKeys[key]);
-                    }
+                    if (this.leases.ContainsKey(key))
+                        this.leases[key].AddRange(newKeys[key]);
                     else
-                    {
-                        leases.Add(key, newKeys[key]);
-                    }
+                        this.leases.Add(key, newKeys[key]);
                 }
             }
 
@@ -101,10 +97,8 @@ namespace TransactionManager.Leases
             {
                 foreach (string key in keys)
                 {
-                    if (leases.ContainsKey(key))
-                    {
-                        leases[key].Remove(this.managerId);
-                    }
+                    if (this.leases.ContainsKey(key) && this.leases[key][0].Equals(this.managerId))
+                        this.leases[key].RemoveAt(0);
                 }
             }
         }

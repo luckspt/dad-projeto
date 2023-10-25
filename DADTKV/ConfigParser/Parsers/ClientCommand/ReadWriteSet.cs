@@ -15,7 +15,7 @@ namespace Parser.Parsers.ClientCommand
         public List<DadInt> WriteSet;
     }
 
-    internal class ReadWriteSetParser : Parser
+    public class ReadWriteSetParser : Parser
     {
         private Regex regex = new Regex(@"^T\s*\(\s*(.*?)\s*\)\s*\(\s*(.*?)\s*\) *$", RegexOptions.Compiled);
         private Regex readSetRegex = new Regex(@"""(.*?)""", RegexOptions.Compiled);

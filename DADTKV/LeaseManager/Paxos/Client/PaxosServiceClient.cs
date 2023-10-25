@@ -79,6 +79,7 @@ namespace LeaseManager.Paxos.Client
                 {
                     try
                     {
+                        Console.WriteLine($"Sending accept to {acceptor.FullRepresentation()}");
                         return this.GetClient(acceptor.Address).Accept(AcceptRequestDTO.toProtobuf(accept));
                     }
                     catch (RpcException e)
@@ -97,6 +98,7 @@ namespace LeaseManager.Paxos.Client
             {
                 try
                 {
+                    Console.WriteLine($"Waiting accepted");
                     // TODO handle when there is no response so we don't wait forever
                     response.Wait();
                     global::AcceptedResponse? acceptedResponse = response.Result;

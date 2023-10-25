@@ -12,18 +12,20 @@ namespace TransactionManager.Transactions.Replication
     internal class TransactionReplication
     {
         public TransactionReplicationServiceClient ServiceClient { get; }
+        public HashSet<Peer> Correct { get; }
         private Dictionary<BroadcastMessage, HashSet<string>> pending;
         private HashSet<BroadcastMessage> delivered;
         private Dictionary<BroadcastMessage, HashSet<string>> acks;
-        public HashSet<Peer> Correct { get; }
+        private Action<BroadcastMessage> callOnDeliver;
 
-        public TransactionReplication(HashSet<Peer> correct)
+        public TransactionReplication(HashSet<Peer> correct, Action<BroadcastMessage> callOnDeliver)
         {
             this.ServiceClient = new TransactionReplicationServiceClient(this);
+            this.Correct = correct;
             this.pending = new Dictionary<BroadcastMessage, HashSet<string>>();
             this.delivered = new HashSet<BroadcastMessage>();
             this.acks = new Dictionary<BroadcastMessage, HashSet<string>>();
-            this.Correct = correct;
+            this.callOnDeliver = callOnDeliver;
         }
 
         public void AddToPending(BroadcastMessage message, string sender)
@@ -52,19 +54,22 @@ namespace TransactionManager.Transactions.Replication
 
         public bool CanDeliver(BroadcastMessage message)
         {
-            // Majority
+            // Majority-Acks URB
+            Console.WriteLine($"\n\n\nCanDeliver??? {message.GetHashCode()} . {string.Join("; ", this.acks.Select(x => $"{x.Key.GetHashCode()}={string.Join(",", x.Value)}"))}\n\n\n");
             int howMany = this.Correct.Where(p => this.acks[message].Contains(p.Address)).Count();
-            return howMany > this.Correct.Count() / 2;
+            return howMany > (this.Correct.Count() / 2);
         }
 
         public bool HasBeenDelivered(BroadcastMessage message)
         {
+            Console.WriteLine($"\n\n\nDelivered??? . {string.Join(",", this.delivered.Select(x => x.GetHashCode()))} ({this.delivered.Contains(message)})\n\n\n");
             return this.delivered.Contains(message);
         }
 
         public void Deliver(BroadcastMessage message)
         {
             this.delivered.Add(message);
+            this.callOnDeliver(message);
             // TODO execute URB Deliver
         }
 

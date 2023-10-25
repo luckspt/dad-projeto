@@ -214,8 +214,8 @@ namespace Manager
                 }
 
                 // Tell all LMs to start Paxos
-                List<string> lmAddresses = Main.LeaseManagers.Select(lm => lm.First.Url).ToList();
-                List<string> tmAddresses = Main.TransactionManagers.Select(tm => tm.First.Url).ToList();
+                List<Peer> lmAddresses = Main.LeaseManagers.Select(lm => new Peer(lm.First.ID, lm.First.Url)).ToList();
+                List<Peer> tmAddresses = Main.TransactionManagers.Select(tm => new Peer(tm.First.ID, tm.First.Url)).ToList();
                 for (int i = 0; i < Main.LeaseManagers.Count; i++)
                 {
                     Logger.GetInstance().Log("Main", $"Starting LM {Main.LeaseManagers[i].First.ID}");
@@ -235,7 +235,9 @@ namespace Manager
                     Pair<ClientConfigLine, EntityStatus> client = Main.Clients[i];
                     Logger.GetInstance().Log("Main", $"Starting Client {client.First.ID}");
 
-                    string arguments = $"{client.First.ID} {client.First.ScriptPath} {i % Main.TransactionManagers.Count} {string.Join(" ", Main.TransactionManagers.Select(tm => tm.First.Url))}";
+                    // TODO REMOVE BREAK!!!!
+                    break;
+                    string arguments = $"{client.First.ID} {client.First.ScriptPath} {i % Main.TransactionManagers.Count} {string.Join(" ", Main.TransactionManagers.Select(tm => new Peer(tm.First.ID, tm.First.Url).FullRepresentation()))}";
                     Process.Start(solutionDirectory + "/Client/bin/Debug/net6.0/Client.exe", arguments);
                 }
             });

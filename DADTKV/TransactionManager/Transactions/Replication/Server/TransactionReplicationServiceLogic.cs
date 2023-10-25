@@ -10,38 +10,45 @@ namespace TransactionManager.Transactions.Replication.Server
 {
     internal class TransactionReplicationServiceLogic
     {
-        private TransactionReplication transactionReplicate;
-        public TransactionReplicationServiceLogic(TransactionReplication transactionReplicate, TransactionReplicationServiceClient transactionReplicationServiceClient)
+        private TransactionManager transactionManager;
+        public TransactionReplicationServiceLogic(TransactionManager transactionManager)
         {
-            this.transactionReplicate = transactionReplicate;
+            this.transactionManager = transactionManager;
         }
 
-        public bool URBBroadcast(BroadcastMessage message, string sender)
+        public bool URBBroadcast(BroadcastMessage message, string senderId)
         {
-            lock (this.transactionReplicate)
+            lock (this.transactionManager.TransactionReplication)
             {
-                this.transactionReplicate.AddToPending(message, sender);
-                this.transactionReplicate.ServiceClient.BEBroadcast(message);
+                Logger.GetInstance().Log($"TransactionReplicationService.OnURB", $"Adding message to pending and BEB Broadcasting");
+
+                this.transactionManager.TransactionReplication.AddToPending(message, senderId);
+                this.transactionManager.TransactionReplication.ServiceClient.BEBroadcast(message, this.transactionManager.ManagerId);
 
                 return true;
             }
         }
 
-        public bool BEBDeliver(BroadcastMessage message, string sender)
+        public bool BEBDeliver(BroadcastMessage message, string senderId)
         {
-            lock (this.transactionReplicate)
+            lock (this.transactionManager.TransactionReplication)
             {
-                this.transactionReplicate.AddToAcks(message, sender);
+                Logger.GetInstance().Log($"TransactionReplicationService.OnBEB", $"Adding message to acks");
+                this.transactionManager.TransactionReplication.AddToAcks(message, senderId);
 
-                if (this.transactionReplicate.IsPending(message, sender))
+                if (this.transactionManager.TransactionReplication.IsPending(message, senderId))
                 {
-                    if (!this.transactionReplicate.HasBeenDelivered(message) && this.transactionReplicate.CanDeliver(message))
-                        this.transactionReplicate.Deliver(message);
+                    bool canDeliver = !this.transactionManager.TransactionReplication.HasBeenDelivered(message) && this.transactionManager.TransactionReplication.CanDeliver(message);
+                    Logger.GetInstance().Log($"TransactionReplicationService.OnBEB", $"Message was pending and hasBeenDelivered={this.transactionManager.TransactionReplication.HasBeenDelivered(message)}, canDeliver={this.transactionManager.TransactionReplication.CanDeliver(message)}, outcome={canDeliver}");
+
+                    if (canDeliver)
+                        this.transactionManager.TransactionReplication.Deliver(message);
                 }
-                else
+                else // NOT Pending
                 {
-                    this.transactionReplicate.AddToPending(message, sender);
-                    this.transactionReplicate.ServiceClient.BEBroadcast(message);
+                    Logger.GetInstance().Log($"TransactionReplicationService.OnBEB", $"Message was NOT pending. Adding to pending and BEB Broadcasting");
+                    this.transactionManager.TransactionReplication.AddToPending(message, senderId);
+                    this.transactionManager.TransactionReplication.ServiceClient.BEBroadcast(message, this.transactionManager.ManagerId);
                 }
 
                 return true;
@@ -51,9 +58,9 @@ namespace TransactionManager.Transactions.Replication.Server
         // TODO implement the suspect processes here
         public bool OnCrashDetected(Peer crashed)
         {
-            lock (this.transactionReplicate)
+            lock (this.transactionManager.TransactionReplication)
             {
-                return this.transactionReplicate.RemoveCorrect(crashed);
+                return this.transactionManager.TransactionReplication.RemoveCorrect(crashed);
             }
         }
     }

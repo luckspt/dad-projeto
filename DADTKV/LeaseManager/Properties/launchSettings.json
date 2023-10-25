@@ -2,7 +2,7 @@
   "profiles": {
     "LeaseManager": {
       "commandName": "Project",
-      "commandLineArgs": "http://localhost:9999 LM2 http://127.0.0.1:10008 100 10000"
+      "commandLineArgs": "http://localhost:9999 LeaseManager1 http://127.0.0.1:10004 100 30000"
     }
   }
 }

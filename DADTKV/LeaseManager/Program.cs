@@ -1,10 +1,10 @@
 ﻿using Grpc.Core;
 using Common;
 using System.Text.RegularExpressions;
-using LeaseManager.LeaseRequesting;
 using LeaseManager.Paxos.Server;
+using LeaseManager.Leasing.Requesting;
 
-namespace Manager
+namespace LeaseManager
 {
     internal static class Program
     {
@@ -21,11 +21,11 @@ namespace Manager
 
             Program.ManagerClient = new ManagerClientServices.ManagerClient(HostPort.FromString(args[0]), args[1], EntityType.LeaseManager);
             LeaseRequestsBuffer leaseRequestsBuffer = new LeaseRequestsBuffer();
-            LeaseManager.LeaseManager lm = new LeaseManager.LeaseManager(leaseRequestsBuffer, int.Parse(args[3]), int.Parse(args[4]));
+            LeaseManager lm = new LeaseManager(leaseRequestsBuffer, int.Parse(args[3]), int.Parse(args[4]));
 
             ManagerClientServices.ManagerServiceLogic managerServiceLogic = new ManagerClientServices.ManagerServiceLogic(Program.ManagerClient);
             managerServiceLogic.StartLeaseManagerDelegate = (List<string> leaseManagersAddresses, List<string> transactionManagersAddresses, int proposerPosition)
-                => Program.StartLeaseManager(leaseManagersAddresses, transactionManagersAddresses, proposerPosition, lm, args[2]);
+                => Program.StartLeaseManager(leaseManagersAddresses, transactionManagersAddresses, proposerPosition, lm, new Peer(args[1], args[2]).FullRepresentation());
 
             LeaseRequestingServiceLogic leaseRequestingServiceLogic = new LeaseRequestingServiceLogic(leaseRequestsBuffer);
 
@@ -36,8 +36,8 @@ namespace Manager
             {
                 Services = {
                     ManagerService.BindService(new ManagerClientServices.ManagerService(managerServiceLogic)),
-                    global::LeaseRequestingService.BindService(new LeaseManager.LeaseRequesting.LeaseRequestingService(leaseRequestingServiceLogic)),
-                    global::PaxosService.BindService(new LeaseManager.Paxos.Server.PaxosService(new PaxosServiceLogic(lm.TimeSlots))),
+                    global::LeaseRequestingService.BindService(new Leasing.Requesting.LeaseRequestingService(leaseRequestingServiceLogic)),
+                    global::PaxosService.BindService(new Paxos.Server.PaxosService(new PaxosServiceLogic(lm.TimeSlots))),
                 },
                 Ports = { serverPort }
             };
@@ -53,7 +53,7 @@ namespace Manager
             Program.GrpcServer.ShutdownTask.Wait();
         }
 
-        private static bool StartLeaseManager(List<string> leaseManagersAddresses, List<string> transactionManagersAddresses, int proposerPosition, LeaseManager.LeaseManager lm, string myAddress)
+        private static bool StartLeaseManager(List<string> leaseManagersAddresses, List<string> transactionManagersAddresses, int proposerPosition, LeaseManager lm, string myAddress)
         {
             // Remove myself from the list of lease managers
             leaseManagersAddresses.Remove(myAddress);

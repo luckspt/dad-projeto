@@ -1,0 +1,17 @@
+﻿syntax = "proto3";
+
+service LeaseRequestingService {
+	rpc RequestLeases(RequestLeasesRequest) returns (RequestLeasesResponse);
+}
+
+// Requesting
+message RequestLeasesRequest {
+	// Allow multiple keys per request to improve performance (batching)
+	repeated string leaseKeys = 1;
+	string requesterTMId = 2;
+}
+
+message RequestLeasesResponse {
+	bool ok = 1;
+}
+// ------------------------------

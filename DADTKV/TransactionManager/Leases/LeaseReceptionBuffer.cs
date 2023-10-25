@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Common;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,16 +17,50 @@ namespace TransactionManager.Leases
     {
         private Leasing leasing;
         private SortedList<int, LeaseUpdates.LeaseUpdateRequest> buffer;
+        private int lastUpdatedEpoch;
 
         public LeaseReceptionBuffer(Leasing leasing)
         {
+            this.lastUpdatedEpoch = 0;
             this.leasing = leasing;
             this.buffer = new SortedList<int, LeaseUpdates.LeaseUpdateRequest>();
         }
 
         public void Add(LeaseUpdates.LeaseUpdateRequest update)
         {
-            this.buffer.Add(update.Epoch, update);
+            lock (this)
+            {
+                lock (this.leasing)
+                {
+                    Logger.GetInstance().Log("LeaseReceptionBuffer.Add", $"Im at lastUpdatedEpoch={this.lastUpdatedEpoch} and I received an update for epoch={update.Epoch}");
+
+                    // Check if we update to the next epoch
+                    if (this.lastUpdatedEpoch + 1 == update.Epoch)
+                    {
+                        // Update leasing without going by the buffer
+                        LeaseUpdates.LeaseUpdateRequest toUpdate = update;
+
+                        do
+                        {
+                            Logger.GetInstance().Log("LeaseReceptionBuffer", $"Applying Leasing for epoch={update.Epoch}");
+
+                            this.leasing.Update(toUpdate.Leases);
+                            this.lastUpdatedEpoch++;
+                            // Remove
+                            this.buffer.Remove(toUpdate.Epoch);
+
+                            // Exhaust all other updates if there's any
+                            if (this.buffer.Count != 0)
+                                toUpdate = this.buffer.ElementAt(0).Value;
+                        } while (this.lastUpdatedEpoch + 1 == toUpdate.Epoch);
+                    }
+                    else if (!this.buffer.ContainsKey(update.Epoch) && update.Epoch > this.lastUpdatedEpoch)
+                        this.buffer.Add(update.Epoch, update);
+
+                    // Pulse so the worker wakes up
+                    Monitor.Pulse(this.leasing);
+                }
+            }
         }
 
         public bool Has(int epoch)

@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Common;
+using Grpc.Core;
+using LeaseManager.Leasing.Updating;
 using LeaseManager.Paxos.Client;
 using LeaseManager.Paxos.Server;
 
@@ -25,6 +27,8 @@ namespace LeaseManager.Paxos
         public List<Peer> Acceptors { get; }
         public List<Peer> Learners { get; }
 
+        private LeaseUpdatesServiceClient leaseUpdates;
+
         private LeaseStore? value;
         private int writeTimestamp;
         private int readTimestamp;
@@ -41,6 +45,7 @@ namespace LeaseManager.Paxos
             this.Acceptors = acceptors;
             this.Learners = learners;
             this.Proposal = new Proposal(proposerPosition, this.Proposers.Count);
+            this.leaseUpdates = new LeaseUpdatesServiceClient(this);
             this.value = null;
             this.writeTimestamp = 0;
             this.readTimestamp = 0;
@@ -238,8 +243,31 @@ namespace LeaseManager.Paxos
                 this.value = accept.Value;
                 this.writeTimestamp = accept.ProposalNumber;
 
+                this.NotifyLearners(accept);
+
                 return this.CraftAccepted(accept.ProposalNumber, this.value);
             }
+        }
+
+        private void NotifyLearners(AcceptRequest accept)
+        {
+            new Task(() =>
+            {
+                try
+                {
+                    // Send LeaseUpdate (accepted) to all Learners (TMs)
+                    this.leaseUpdates.LeaseUpdate(new Leasing.Updating.LeaseUpdateRequest
+                    {
+                        Epoch = accept.Slot,
+                        Leases = accept.Value
+                    });
+                }
+                catch (RpcException e)
+                {
+                    Logger.GetInstance().Log("NotifyLearners", e.Message);
+                    // ..
+                }
+            }).Start();
         }
 
         /// <summary>

@@ -1,5 +1,5 @@
 ﻿using Common;
-using LeaseManager.LeaseRequesting;
+using LeaseManager.Leasing.Requesting;
 using LeaseManager.Paxos;
 using System;
 using System.Collections.Generic;
@@ -23,14 +23,12 @@ namespace LeaseManager
 
         public void Start(List<string> leaseManagersAddresses, List<string> transactionManagersAddresses, int proposerPosition)
         {
-            List<Peer> proposers = leaseManagersAddresses.Select(address => new Peer(address)).ToList();
+            List<Peer> proposers = leaseManagersAddresses.Select(address => Peer.FromString(address)).ToList();
             List<Peer> acceptors = proposers.ToList();
-            List<Peer> learners = proposers.ToList()
-                .Concat(transactionManagersAddresses.Select(address => new Peer(address)).ToList())
-                .ToList();
+            List<Peer> learners = transactionManagersAddresses.Select(address => Peer.FromString(address)).ToList();
 
             // TODO REMOVE (this way it start right away)
-            // new Task(() => this.StartPaxos(proposers, acceptors, learners, proposerPosition)).Start();
+            new Task(() => this.StartPaxos(proposers, acceptors, learners, proposerPosition)).Start();
             // --
             this.paxosTimer = new Timer((object state) => this.StartPaxos(proposers, acceptors, learners, proposerPosition), this.TimeSlots.Slots, TimeSpan.FromMilliseconds(this.TimeSlots.SlotDurationMs), TimeSpan.FromMilliseconds(this.TimeSlots.SlotDurationMs));
         }

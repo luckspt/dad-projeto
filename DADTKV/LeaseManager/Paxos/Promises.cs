@@ -77,8 +77,10 @@ namespace LeaseManager.Paxos
             {
                 Slot = response.Value.Slot,
                 WriteTimestamp = response.Value.WriteTimestamp,
-                SelfLeases = { TmLeasesDTO.toProtobuf(response.Value.SelfLeases) }
             };
+
+            if (response.Value.SelfLeases != null)
+                promise.SelfLeases.AddRange(TmLeasesDTO.toProtobuf(response.Value.SelfLeases));
 
             if (response.Value.Value != null)
                 promise.Value.AddRange(TmLeasesDTO.toProtobuf(response.Value.Value));

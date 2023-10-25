@@ -1,6 +1,7 @@
 ﻿using Common;
 using DADTKV;
 using DADTKV.Transactions;
+using Parser;
 using Parser.Parsers.ClientCommand;
 using System;
 using System.Collections.Generic;
@@ -36,8 +37,47 @@ namespace Client
         {
             while (true)
             {
-                this.ProcessCommands();
+                // this.ProcessCommands();
+                this.ProcessCLICommands();
             }
+        }
+
+        private void ProcessCLICommands()
+        {
+            Parser.Parser parser = new ReadWriteSetParser();
+            do
+            {
+                try
+                {
+                    string rawCommand = System.Console.ReadLine()!;
+                    Tuple<ConfigType, ConfigLine> parsedCommand = parser.Result(rawCommand);
+                    ClientCommandConfigLine command = (ClientCommandConfigLine)parsedCommand.Item2;
+
+                    switch (command.Type)
+                    {
+                        case ClientCommandConfigType.Wait:
+                            var waitCommand = (WaitConfigLine)command;
+
+                            Logger.GetInstance().Log("ProcessCommands", $"Waiting {waitCommand.Time}ms...");
+                            Thread.Sleep(waitCommand.Time);
+                            break;
+                        case ClientCommandConfigType.ReadWriteSet:
+                            Logger.GetInstance().Log("ProcessCommands", $"Sending transaction...");
+
+                            var rwCommand = (ReadWriteSetConfigLine)command;
+
+                            List<DadInt> readValues = this.transactions.TxSubmit(this.id, rwCommand.ReadSet, rwCommand.WriteSet);
+                            string readValuesStr = string.Join(", ", readValues.Select(v => v.ToString()));
+
+                            System.Console.WriteLine($"Values read: {readValuesStr}");
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine(ex.Message);
+                }
+            } while (true);
         }
 
         private void ProcessCommands()

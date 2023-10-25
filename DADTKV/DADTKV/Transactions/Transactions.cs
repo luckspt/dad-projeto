@@ -17,7 +17,7 @@ namespace DADTKV.Transactions
         {
             try
             {
-                return this.client.RunTransaction(this.transactionManager, toRead, toWrite);
+                return this.client.RunTransaction(clientId, this.transactionManager, toRead, toWrite);
             }
             catch
             {

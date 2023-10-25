@@ -23,11 +23,10 @@ namespace Client
                                                 .ConvertAll(line => (ClientCommandConfigLine)line);
 
             List<Peer> transactionManagers = args[3..]
-                                                .Select(address => new Peer(address))
+                                                .Select(raw => Peer.FromString(raw))
                                                 .ToList();
 
             Client client = new Client(args[0], int.Parse(args[2]), commands, transactionManagers);
-
             client.Start();
         }
     }

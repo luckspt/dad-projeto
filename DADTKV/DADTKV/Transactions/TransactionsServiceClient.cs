@@ -38,7 +38,7 @@ namespace TransactionManager.Leases.LeaseRequesting
 
     internal class TransactionsServiceClient
     {
-        public List<DadInt> RunTransaction(Peer server, List<string> keysToRead, List<DadInt> keysToWrite)
+        public List<DadInt> RunTransaction(string clientId, Peer server, List<string> keysToRead, List<DadInt> keysToWrite)
         {
             Logger.GetInstance().Log($"ClientTransactionsService", $"Reading {string.Join(", ", keysToRead)} and writing {string.Join(", ", keysToWrite)}");
 
@@ -46,6 +46,7 @@ namespace TransactionManager.Leases.LeaseRequesting
             {
                 RunTransactionResponse response = this.GetClient(server.Address).RunTransaction(new RunTransactionRequest
                 {
+                    ClientId = clientId,
                     KeysToRead = { keysToRead },
                     KeysToWrite = { DadIntListDTO.toProtobuf(keysToWrite) },
                 });

@@ -21,21 +21,15 @@ namespace TransactionManager.Transactions
 
         public void Add(Transaction transaction)
         {
-            lock (this)
-            {
-                buffer.Add(transaction);
-            }
+            buffer.Add(transaction);
         }
 
         public Transaction Take()
         {
-            lock (this)
-            {
-                Transaction transaction = buffer[0];
-                buffer.RemoveAt(0);
+            Transaction transaction = buffer[0];
+            buffer.RemoveAt(0);
 
-                return transaction;
-            }
+            return transaction;
         }
     }
 }

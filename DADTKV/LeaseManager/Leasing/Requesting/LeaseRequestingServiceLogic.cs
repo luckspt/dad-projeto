@@ -1,10 +1,11 @@
-﻿using System;
+﻿using Common;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LeaseManager.LeaseRequesting
+namespace LeaseManager.Leasing.Requesting
 {
     internal class LeaseRequestingServiceLogic
     {
@@ -16,7 +17,8 @@ namespace LeaseManager.LeaseRequesting
 
         public bool RequestLeases(string requesterTMId, List<string> keys)
         {
-            this.leaseBuffer.AddRange(requesterTMId, keys);
+            Logger.GetInstance().Log("LeaseRequestingService", $"TM {requesterTMId} requesting leases={string.Join(",", keys)}");
+            leaseBuffer.AddRange(requesterTMId, keys);
             return true;
         }
     }

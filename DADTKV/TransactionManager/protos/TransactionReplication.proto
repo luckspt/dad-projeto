@@ -6,18 +6,24 @@ service TransactionReplicationService
 	rpc BEBDeliver(BEBDeliverRequest) returns (BEBDeliverResponse);
 }
 
+message RPCStoreDadInt {
+	string key = 1;
+	int32 value = 2;
+	int32 epoch = 3;
+	int32 epochWriteVersion = 4;
+}
+
 message BroadcastMessage
 {
-	string originSenderId = 1;
-	int32 epoch = 2;
-	string key = 3;
-	int32 keyLastWriteTimestamp = 4;
+	int32 originReplyLockHash = 1;
+	repeated RPCStoreDadInt dadInts = 2;
 }
 
 // URBBroadcast
 message URBBroadcastRequest
 {
 	BroadcastMessage message = 1;
+	string senderId = 2;
 }
 
 message URBBroadcastResponse
@@ -30,6 +36,7 @@ message URBBroadcastResponse
 message BEBDeliverRequest
 {
 	BroadcastMessage message = 1;
+	string senderId = 2;
 }
 
 message BEBDeliverResponse

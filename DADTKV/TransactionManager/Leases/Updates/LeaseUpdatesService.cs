@@ -9,16 +9,10 @@ using System.Threading.Tasks;
 
 namespace TransactionManager.Leases.LeaseUpdates
 {
-    public struct LeaseUpdate
-    {
-        public string Key;
-        public List<string> TargetTMIds;
-    }
-
     public struct LeaseUpdateRequest
     {
         public int Epoch;
-        public List<LeaseUpdate> Leases;
+        public Dictionary<string, List<string>> Leases;
     }
 
     internal class LeaseUpdateRequestDTO
@@ -29,11 +23,7 @@ namespace TransactionManager.Leases.LeaseUpdates
             {
                 Epoch = updateRequest.Epoch,
                 // TODO: What if leases is empty?
-                Leases = updateRequest.Leases.Select(lease => new LeaseUpdate
-                {
-                    Key = lease.Key,
-                    TargetTMIds = lease.TargetTMIds.ToList()
-                }).ToList()
+                Leases = updateRequest.Leases.ToDictionary(x => x.Key, x => x.TargetTMIds.ToList())
             };
         }
     }

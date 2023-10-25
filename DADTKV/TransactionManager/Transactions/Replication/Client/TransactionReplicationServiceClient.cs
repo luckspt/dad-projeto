@@ -1,11 +1,15 @@
 ﻿using Common;
+using Grpc.Core;
 using Grpc.Net.Client;
+using Microsoft.VisualBasic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using TransactionManager.Leases.LeaseUpdates;
+using TransactionManager.Transactions.Replication.Server;
 
 namespace TransactionManager.Transactions.Replication.Client
 {
@@ -17,32 +21,55 @@ namespace TransactionManager.Transactions.Replication.Client
             this.transactionReplication = transactionReplication;
         }
 
-        public void URBroadcast(BroadcastMessage message)
+        public void URBroadcast(BroadcastMessage message, string senderId)
         {
             lock (this.transactionReplication.Correct)
             {
+
                 foreach (Peer correct in this.transactionReplication.Correct)
                 {
-                    // TODO do we need to track messages or can we just send and forget?
-                    this.GetClient(correct.Address).URBBroadcastAsync(new URBBroadcastRequest
+                    new Task(() =>
                     {
-                        Message = message
-                    });
+                        try
+                        {
+                            this.GetClient(correct.Address).URBBroadcast(new URBBroadcastRequest
+                            {
+                                Message = BroadcastMessageDTO.toProtobuf(message),
+                                SenderId = senderId
+                            });
+                            Logger.GetInstance().Log($"TransactionReplicationService.URB", $"Sending message to {correct.Address}");
+                        }
+                        catch (RpcException e)
+                        {
+                            Logger.GetInstance().Log("URBroadcast", e.Message);
+                        }
+                    }).Start();
                 }
             }
         }
 
-        public void BEBroadcast(BroadcastMessage message)
+        public void BEBroadcast(BroadcastMessage message, string senderId)
         {
             lock (this.transactionReplication.Correct)
             {
                 foreach (Peer correct in this.transactionReplication.Correct)
                 {
-                    // TODO do we need to track messages or can we just send and forget?
-                    this.GetClient(correct.Address).BEBDeliverAsync(new BEBDeliverRequest
+                    new Task(() =>
                     {
-                        Message = message
-                    });
+                        try
+                        {
+                            Logger.GetInstance().Log($"TransactionReplicationService.BEB", $"Sending message to {correct.Address}");
+                            this.GetClient(correct.Address).BEBDeliver(new BEBDeliverRequest
+                            {
+                                Message = BroadcastMessageDTO.toProtobuf(message),
+                                SenderId = senderId
+                            });
+                        }
+                        catch (RpcException e)
+                        {
+                            Logger.GetInstance().Log("BEBroadcast", e.Message);
+                        }
+                    }).Start();
                 }
             }
         }
