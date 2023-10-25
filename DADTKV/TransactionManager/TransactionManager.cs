@@ -55,41 +55,10 @@ namespace TransactionManager
             if (this.TransactionsBuffer.Count != 0)
             {
                 Transaction transaction = this.TransactionsBuffer.Take();
+                transaction.WaitToExecute(this.Leasing);
 
-                List<string> keysToReadKeys = transaction.ReadOperations.Select(t => t.Key).ToList();
-                List<string> keysToWriteKeys = transaction.WriteOperations.Select(t => t.Key).ToList();
-
-                Dictionary<string, bool> allKeys = keysToReadKeys.Concat(keysToWriteKeys).ToDictionary(key => key, key => this.Leasing.HasLease(key));
-                bool hasAllLeases = false;
-
-                while (!hasAllLeases)
-                {
-                    hasAllLeases = allKeys.All(x => x.Value == true);
-                    // TODO Monitors on Lease update (and lease freeing to make this method advance)
-                }
-
-                // Now we have all the leases
-                // Execute the reads --
-                List<KeyValuePair<string, StoreDadInt>> keysToRead = this.KVStore.Where(x => keysToReadKeys.Contains(x.Key)).ToList();
-
-                // return keysRead to client
-                List<DadInt> keysRead = keysToRead.Select(x => new DadInt(x.Key, x.Value.Value)).ToList();
-                // --
-
-                // Execute the writes --
-                // TODO replicate
-                // --
-
-                // Check if there is any lease that's conflicting after executing this transaction --
-                List<string> conflictingLeases = allKeys
-                        .Where(x => this.Leasing.IsConflicting(x.Key))
-                        .Select(x => x.Key)
-                        .ToList();
-
-                // Free them
-                if (conflictingLeases.Count > 0)
-                    this.Leasing.Free(conflictingLeases);
-                // --
+                List<DadInt> read = transaction.ExecuteReads(this.Leasing, this.KVStore);
+                transaction.ExecuteWrites(this.managerId, this.Leasing, this.KVStore);
             }
         }
     }
