@@ -28,7 +28,7 @@ namespace TransactionManager
         public List<Peer> TransactionManagers { get; private set; }
         public KVStore KVStore { get; private set; }
         public TransactionRequestsBuffer TransactionsBuffer { get; private set; }
-        public Dictionary<Transactions.Transaction, TransactionReplyLock> TransactionReplyLocks { get; }
+        public Dictionary<string, KeyValuePair<TransactionReplyLock, Transactions.Transaction>> TransactionReplyLocks { get; }
         public TransactionReplication TransactionReplication { get; private set; }
 
 
@@ -37,7 +37,7 @@ namespace TransactionManager
             this.ManagerId = managerId;
             this.KVStore = new KVStore();
             this.TransactionsBuffer = new TransactionRequestsBuffer();
-            this.TransactionReplyLocks = new Dictionary<Transactions.Transaction, TransactionReplyLock>();
+            this.TransactionReplyLocks = new Dictionary<string, KeyValuePair<TransactionReplyLock, Transactions.Transaction>>();
         }
 
         public void Start(List<string> leaseManagersAddresses, List<string> transactionManagersAddresses)
@@ -74,15 +74,15 @@ namespace TransactionManager
 
                 Logger.GetInstance().Log($"TransactionManager.HandleTransactionRequests", $"Working on a transaction (has leases)");
                 // Execute the reads and then the writes
-                TransactionReplyLock replyLock = this.TransactionReplyLocks[transaction];
-                lock (replyLock)
+                KeyValuePair<TransactionReplyLock, Transactions.Transaction> replyLock = this.TransactionReplyLocks[transaction.Guid];
+                lock (replyLock.Key)
                 {
                     // Read
                     List<DadInt> reads = transaction.ExecuteReads(this.Leasing, this.KVStore);
 
                     // Populate the ReplyValue and Pulse it
-                    replyLock.ReplyValue = reads;
-                    Monitor.Pulse(replyLock);
+                    replyLock.Key.ReplyValue = reads;
+                    Monitor.Pulse(replyLock.Key);
                     Logger.GetInstance().Log($"TransactionManager.HandleTransactionRequests", $"Reads executed, Pulsing thread");
 
                     // Write (async messages)
@@ -102,7 +102,10 @@ namespace TransactionManager
                 {
                     StoreDadInt storeDadInt;
                     if (!this.KVStore.TryGetValue(receivedDadInt.Key, out storeDadInt))
-                        storeDadInt = new StoreDadInt() { };
+                    {
+                        storeDadInt = new StoreDadInt();
+                        this.KVStore.Add(receivedDadInt.Key, storeDadInt);
+                    }
 
                     // Update if
                     // - Older epoch (maybe from other TM but we don't distinguish)
@@ -119,28 +122,31 @@ namespace TransactionManager
             }
 
             // Allow reply to the client and Pulse it
-            try
+            lock (this.TransactionReplication)
             {
-                KeyValuePair<Transactions.Transaction, TransactionReplyLock> replyLock = this.TransactionReplyLocks.First(t => t.Key.GetHashCode() == message.OriginReplyLockHash);
-
-                Logger.GetInstance().Log($"TransactionManager.OnTransactionReplicated", $"Will reply to client");
-
-                lock (replyLock.Value)
+                try
                 {
-                    Logger.GetInstance().Log($"TransactionManager.OnTransactionReplicated", $"Pulsing other thread");
-                    replyLock.Value.CanReply = true;
-                    Monitor.Pulse(replyLock.Value);
-                }
+                    KeyValuePair<TransactionReplyLock, Transactions.Transaction> replyLock = this.TransactionReplyLocks[message.Guid];
 
-                Logger.GetInstance().Log($"TransactionManager.OnTransactionReplicated", $"Cleanup leases");
-                // Since we sent out the request (and replicated it)
-                //  check and release if we are holding conflicting leases
-                replyLock.Key.CleanupLeases(this.Leasing);
-            }
-            catch
-            {
-                // Does not have the replyLock
-                Logger.GetInstance().Log("OnTransactionReplicated", "Will NOT reply to client (does not have replyLock)");
+                    Logger.GetInstance().Log($"TransactionManager.OnTransactionReplicated", $"Will reply to client");
+
+                    lock (replyLock.Key)
+                    {
+                        Logger.GetInstance().Log($"TransactionManager.OnTransactionReplicated", $"Pulsing other thread");
+                        replyLock.Key.CanReply = true;
+                        Monitor.Pulse(replyLock.Key);
+                    }
+
+                    Logger.GetInstance().Log($"TransactionManager.OnTransactionReplicated", $"Cleanup leases");
+                    // Since we sent out the request (and replicated it)
+                    //  check and release if we are holding conflicting leases
+                    replyLock.Value.CleanupLeases(this.Leasing);
+                }
+                catch
+                {
+                    // Does not have the replyLock
+                    Logger.GetInstance().Log("OnTransactionReplicated", "Will NOT reply to client (does not have replyLock)");
+                }
             }
         }
     }

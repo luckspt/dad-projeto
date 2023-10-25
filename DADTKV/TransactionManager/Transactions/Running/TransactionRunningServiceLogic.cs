@@ -27,6 +27,7 @@ namespace TransactionManager.Transactions.Replication
                 // Create Transaction
                 Transaction transaction = new Transaction(
                     clientId,
+                    Guid.NewGuid().ToString(),
                     keysToRead,
                     keysToWrite
                 );
@@ -36,7 +37,7 @@ namespace TransactionManager.Transactions.Replication
                 lock (replyLock)
                 {
                     // Add it so it's available to the other threads
-                    this.transactionManager.TransactionReplyLocks.Add(transaction, replyLock);
+                    this.transactionManager.TransactionReplyLocks.Add(transaction.Guid, new KeyValuePair<TransactionReplyLock, Transaction>(replyLock, transaction));
 
                     // Add transaction to be worked on by worker thread
                     // Worker thread will Pulse replyLock when READ is completed as well as when WRITE is completed

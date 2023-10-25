@@ -9,7 +9,7 @@ namespace TransactionManager.Transactions.Replication
 {
     internal class BroadcastMessage
     {
-        public int OriginReplyLockHash;
+        public string Guid;
         public List<RPCStoreDadInt> DadInts;
 
         public override bool Equals(object? obj)
@@ -17,7 +17,7 @@ namespace TransactionManager.Transactions.Replication
             if (obj == null) return false;
             BroadcastMessage other = (BroadcastMessage)obj;
 
-            if (this.OriginReplyLockHash != other.OriginReplyLockHash) return false;
+            if (!this.Guid.Equals(other.Guid)) return false;
             if (!this.DadInts.All(other.DadInts.Contains) || this.DadInts.Count != other.DadInts.Count) return false;
 
             return true;
@@ -28,12 +28,10 @@ namespace TransactionManager.Transactions.Replication
             unchecked
             {
                 int hash = 13;
-                hash = (hash * 7) + this.OriginReplyLockHash.GetHashCode();
+                hash = (hash * 7) + this.Guid.GetHashCode();
 
                 foreach (var dadInt in this.DadInts)
-                {
                     hash = (hash * 7) + (dadInt == null ? 0 : dadInt.GetHashCode());
-                }
 
                 return hash;
             }

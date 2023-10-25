@@ -15,7 +15,7 @@ message RPCStoreDadInt {
 
 message BroadcastMessage
 {
-	int32 originReplyLockHash = 1;
+	string guid = 1;
 	repeated RPCStoreDadInt dadInts = 2;
 }
 

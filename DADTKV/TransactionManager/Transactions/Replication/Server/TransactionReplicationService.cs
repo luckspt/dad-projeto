@@ -38,7 +38,7 @@ namespace TransactionManager.Transactions.Replication.Server
         {
             return new BroadcastMessage()
             {
-                OriginReplyLockHash = message.OriginReplyLockHash,
+                Guid = message.Guid,
                 DadInts = message.DadInts.Select(RPCStoreDadIntDTO.fromProtobuf).ToList()
             };
         }
@@ -47,7 +47,7 @@ namespace TransactionManager.Transactions.Replication.Server
         {
             return new global::BroadcastMessage()
             {
-                OriginReplyLockHash = message.OriginReplyLockHash,
+                Guid = message.Guid,
                 DadInts = { message.DadInts.Select(RPCStoreDadIntDTO.toProtobuf).ToList() }
             };
         }

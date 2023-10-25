@@ -55,14 +55,12 @@ namespace TransactionManager.Transactions.Replication
         public bool CanDeliver(BroadcastMessage message)
         {
             // Majority-Acks URB
-            Console.WriteLine($"\n\n\nCanDeliver??? {message.GetHashCode()} . {string.Join("; ", this.acks.Select(x => $"{x.Key.GetHashCode()}={string.Join(",", x.Value)}"))}\n\n\n");
-            int howMany = this.Correct.Where(p => this.acks[message].Contains(p.Address)).Count();
+            int howMany = this.Correct.Where(p => this.acks[message].Contains(p.Id)).Count();
             return howMany > (this.Correct.Count() / 2);
         }
 
         public bool HasBeenDelivered(BroadcastMessage message)
         {
-            Console.WriteLine($"\n\n\nDelivered??? . {string.Join(",", this.delivered.Select(x => x.GetHashCode()))} ({this.delivered.Contains(message)})\n\n\n");
             return this.delivered.Contains(message);
         }
 
@@ -70,7 +68,6 @@ namespace TransactionManager.Transactions.Replication
         {
             this.delivered.Add(message);
             this.callOnDeliver(message);
-            // TODO execute URB Deliver
         }
 
         public bool RemoveCorrect(Peer crashed)

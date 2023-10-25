@@ -15,12 +15,14 @@ namespace TransactionManager.Transactions
     internal class Transaction
     {
         public string ClientId { get; }
+        public string Guid { get; }
         public List<ReadOperation> ReadOperations { get; }
         public List<WriteOperation> WriteOperations { get; }
 
-        public Transaction(string clientId, List<ReadOperation> readOperations, List<WriteOperation> writeOperations)
+        public Transaction(string clientId, string guid, List<ReadOperation> readOperations, List<WriteOperation> writeOperations)
         {
             this.ClientId = clientId;
+            this.Guid = guid;
             this.ReadOperations = readOperations;
             this.WriteOperations = writeOperations;
         }
@@ -73,7 +75,7 @@ namespace TransactionManager.Transactions
 
             Replication.BroadcastMessage message = new Replication.BroadcastMessage
             {
-                OriginReplyLockHash = transactionManager.TransactionReplyLocks[this].GetHashCode(),
+                Guid = this.Guid,
                 DadInts = this.DadIntsToWrite(transactionManager.KVStore, transactionManager.Leasing.Epoch)
             };
 
