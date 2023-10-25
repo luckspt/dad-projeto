@@ -10,28 +10,51 @@ namespace TransactionManager.Transactions.Replication.Server
 {
     internal class TransactionReplicationServiceLogic
     {
-        private TransactionReplicate transactionReplicate;
-        private TransactionReplicationServiceClient transactionReplicationServiceClient;
-
-        private void OnURBBroadcast(URBMessage message)
+        private TransactionReplication transactionReplicate;
+        public TransactionReplicationServiceLogic(TransactionReplication transactionReplicate, TransactionReplicationServiceClient transactionReplicationServiceClient)
         {
-            this.transactionReplicate.AddToPending(message);
-            this.transactionReplicationServiceClient.TriggerBEBBroadcast(message);
+            this.transactionReplicate = transactionReplicate;
         }
 
-        private void OnBEBDeliver(URBMessage message, Peer sender)
+        public bool URBBroadcast(BroadcastMessage message, string sender)
         {
-            this.transactionReplicate.AddToAcks(message, sender);
-            if (!this.transactionReplicate.IsPending(message))
+            lock (this.transactionReplicate)
             {
-                this.transactionReplicate.AddToPending(message);
-                this.transactionReplicationServiceClient.TriggerBEBBroadcast(message);
+                this.transactionReplicate.AddToPending(message, sender);
+                this.transactionReplicate.ServiceClient.BEBroadcast(message);
+
+                return true;
             }
         }
 
-        private void OnCrashDetected(Peer crashed)
+        public bool BEBDeliver(BroadcastMessage message, string sender)
         {
-            this.transactionReplicate.RemoveCorrect(crashed);
+            lock (this.transactionReplicate)
+            {
+                this.transactionReplicate.AddToAcks(message, sender);
+
+                if (this.transactionReplicate.IsPending(message, sender))
+                {
+                    if (!this.transactionReplicate.HasBeenDelivered(message) && this.transactionReplicate.CanDeliver(message))
+                        this.transactionReplicate.Deliver(message);
+                }
+                else
+                {
+                    this.transactionReplicate.AddToPending(message, sender);
+                    this.transactionReplicate.ServiceClient.BEBroadcast(message);
+                }
+
+                return true;
+            }
+        }
+
+        // TODO implement the suspect processes here
+        public bool OnCrashDetected(Peer crashed)
+        {
+            lock (this.transactionReplicate)
+            {
+                return this.transactionReplicate.RemoveCorrect(crashed);
+            }
         }
     }
 }

@@ -8,6 +8,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<None Include="..\.editorconfig" Link=".editorconfig" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="Google.Protobuf" Version="3.24.3" />
 		<PackageReference Include="Grpc.Core" Version="2.46.6" />
 		<PackageReference Include="Grpc.Net.Client" Version="2.57.0" />
@@ -15,6 +19,7 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
+
 		<ProjectReference Include="..\Common\Common.csproj" />
 		<ProjectReference Include="..\ConfigParser\Parser.csproj" />
 		<ProjectReference Include="..\ManagerClientServices\ManagerClientServices.csproj" />

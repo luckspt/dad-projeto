@@ -54,11 +54,26 @@ namespace TransactionManager
             // TODO can be improved by using monitors
             if (this.TransactionsBuffer.Count != 0)
             {
+                // Get the latest transaction in the Queue
                 Transaction transaction = this.TransactionsBuffer.Take();
+
+                // Wait until we can operate on it (we own all the necessary leases)
                 transaction.WaitToExecute(this.Leasing);
 
-                List<DadInt> read = transaction.ExecuteReads(this.Leasing, this.KVStore);
-                transaction.ExecuteWrites(this.managerId, this.Leasing, this.KVStore);
+                // Execute the reads and then the writes
+                TransactionReplyLock replyLock = this.TransactionReplyLocks[transaction];
+                lock (replyLock)
+                {
+                    // Read
+                    List<DadInt> reads = transaction.ExecuteReads(this.Leasing, this.KVStore);
+
+                    // Populate the ReplyValue and Pulse the replyLock
+                    replyLock.ReplyValue = reads;
+                    Monitor.Pulse(replyLock);
+
+                    // Write
+                    transaction.ExecuteWrites(this.managerId, this.Leasing, this.KVStore);
+                }
             }
         }
     }

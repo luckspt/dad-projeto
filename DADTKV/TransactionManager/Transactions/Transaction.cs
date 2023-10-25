@@ -26,25 +26,31 @@ namespace TransactionManager.Transactions
         // Block until we have all the leases
         public void WaitToExecute(Leasing leasing)
         {
-            List<string> keysToReadKeys = this.ReadOperations.Select(t => t.Key).ToList();
-            List<string> keysToWriteKeys = this.WriteOperations.Select(t => t.Key).ToList();
-
-            Dictionary<string, bool> allKeys = keysToReadKeys.Concat(keysToWriteKeys).ToDictionary(key => key, key => leasing.HasLease(key));
-            bool hasAllLeases = false;
-
-            while (!hasAllLeases)
+            // Lock leasing because we want to Pulse/Wait for it
+            lock (leasing)
             {
-                hasAllLeases = allKeys.All(x => x.Value == true);
-                // TODO Monitors on Lease update (and lease freeing to make this method advance)
+                List<string> keysToReadKeys = this.ReadOperations.Select(t => t.Key).ToList();
+                List<string> keysToWriteKeys = this.WriteOperations.Select(t => t.Key).ToList();
+
+                List<string> allKeys = keysToReadKeys.Concat(keysToWriteKeys).ToList();
+
+                // Wait until we own all the leases
+                while (!allKeys.All(x => leasing.HasLease(x)))
+                {
+                    Monitor.Wait(leasing);
+                }
             }
         }
 
         public List<DadInt> ExecuteReads(Leasing leasing, KVStore kvStore)
         {
-            List<string> keysToReadKeys = this.ReadOperations.Select(t => t.Key).ToList();
-            List<KeyValuePair<string, StoreDadInt>> keysToRead = kvStore.Where(x => keysToReadKeys.Contains(x.Key)).ToList();
+            lock (kvStore)
+            {
+                List<string> keysToReadKeys = this.ReadOperations.Select(t => t.Key).ToList();
+                List<KeyValuePair<string, StoreDadInt>> keysToRead = kvStore.Where(x => keysToReadKeys.Contains(x.Key)).ToList();
 
-            return keysToRead.Select(x => new DadInt(x.Key, x.Value.Value)).ToList();
+                return keysToRead.Select(x => new DadInt(x.Key, x.Value.Value)).ToList();
+            }
         }
 
         // Block until writes are propagated
