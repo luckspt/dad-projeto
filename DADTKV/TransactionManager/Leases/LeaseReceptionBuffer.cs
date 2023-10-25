@@ -14,11 +14,17 @@ namespace TransactionManager.Leases
     /// </summary>
     internal class LeaseReceptionBuffer
     {
+        private Leasing leasing;
         private SortedList<int, LeaseUpdates.LeaseUpdateRequest> buffer;
+
+        public LeaseReceptionBuffer(Leasing leasing)
+        {
+            this.leasing = leasing;
+            this.buffer = new SortedList<int, LeaseUpdates.LeaseUpdateRequest>();
+        }
 
         public void Add(LeaseUpdates.LeaseUpdateRequest update)
         {
-            // TODO should we check if its the last?
             this.buffer.Add(update.Epoch, update);
         }
 

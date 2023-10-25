@@ -11,15 +11,12 @@ using TransactionManager.Transactions;
 
 namespace TransactionManager
 {
-    public class TMPeer
+    class TransactionReplyLock
     {
-        public string Address { get; }
-
-        public TMPeer(string address)
-        {
-            this.Address = address;
-        }
+        public List<DadInt> ReplyValue;
+        public bool CanReply;
     }
+
     internal class TransactionManager
     {
         // The id of this transaction manager
@@ -29,6 +26,8 @@ namespace TransactionManager
         public List<Peer> TransactionManagers { get; private set; }
         public KVStore KVStore { get; private set; }
         public TransactionRequestsBuffer TransactionsBuffer { get; private set; }
+        public Dictionary<Transaction, TransactionReplyLock> TransactionReplyLocks { get; } = new Dictionary<Transaction, TransactionReplyLock>();
+
 
         public TransactionManager(String managerId)
         {

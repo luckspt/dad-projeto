@@ -19,16 +19,10 @@ namespace TransactionManager.Transactions
             buffer = new List<Transaction>();
         }
 
-        public void Add(string clientId, List<ReadOperation> keysToRead, List<WriteOperation> keysToWrte)
+        public void Add(Transaction transaction)
         {
             lock (this)
             {
-                Transaction transaction = new Transaction(
-                    clientId,
-                    keysToRead,
-                    keysToWrte
-                );
-
                 buffer.Add(transaction);
             }
         }
