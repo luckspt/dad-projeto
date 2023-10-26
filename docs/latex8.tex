@@ -1,4 +1,3 @@
-
 %
 %  $Description: Author guidelines and sample document in LaTeX 2.09$ 
 %
@@ -20,12 +19,12 @@
 %------------------------------------------------------------------------- 
 \begin{document}
 
-\title{\LaTeX\ Author Guidelines 
-       for {\boldmath $8.5 \times 11$-Inch} Proceedings Manuscripts}
+\title{DADTKV}
 
-\author{Paolo Ienne\\
-Swiss Federal Institute of Technology\\ Microcomputing Laboratory \\ IN-F 
-Ecublens, 1015 Lausanne, Switzerland\\ Paolo.Ienne@di.epfl.ch\\
+\author{Lucas Pinto\\
+Instituto Superio Técnico\\
+Universidade de Lisboa\\
+lucas.f.pinto@tecnico.ulisboa.pt\\
 % For a paper whose authors are all at the same institution, 
 % omit the following lines up until the closing ``}''.
 % Additional authors and addresses can be added with ``\and'', 
@@ -41,13 +40,11 @@ SecondAuthor@institution2.com\\
 \thispagestyle{empty}
 
 \begin{abstract}
-   The ABSTRACT is to be in fully-justified italicized text, at the top 
-   of the left-hand column, below the author and affiliation 
-   information. Use the word ``Abstract'' as the title, in 12-point 
-   Times, boldface type, centered relative to the column, initially 
-   capitalized. The abstract is to be in 10-point, single-spaced type. 
-   The abstract may be up to 3 inches (7.62 cm) long. Leave two blank 
-   lines after the Abstract, then begin the main text. 
+   This project focuses on developing \textbf{DADTKV}, a distributed transactional key-value store.
+   \textbf{DADTKV} enables concurrent data access through a multi-tier architecture.
+   Clients submit transactions using a specialized library, and transactions are coordinated
+   through leases and consensus algorithms. This project leverages C\# and gRPC to create
+   a robust and fault-tolerant distributed system for efficient data management.
 \end{abstract}
 
 
@@ -55,51 +52,62 @@ SecondAuthor@institution2.com\\
 %------------------------------------------------------------------------- 
 \Section{Introduction}
 
-Please follow the steps outlined below when submitting your 
-manuscript to the IEEE Computer Society Press. Note there have 
-been some changes to the measurements from previous instructions. 
+This project introduces a complex architecture with three tiers, encompassing client applications,
+transaction managers, and lease manager servers. \textbf{DADTKV}'s primary data unit is the \textit{DadInt}
+key-value pair, with a focus on strict serializability to ensure data consistency.
 
 %------------------------------------------------------------------------- 
-\Section{Instructions}
+\Section{Implementations}
 
-Please read the following carefully.
-
-%------------------------------------------------------------------------- 
-\SubSection{Language}
-
-All manuscripts must be in English.
+\textbf{TODO}
 
 %------------------------------------------------------------------------- 
-\SubSection{Printing your paper}
+\SubSection{Manager}
 
-Print your properly formatted text on high-quality, $8.5 \times 11$-inch 
-white printer paper. A4 paper is also acceptable, but please leave the 
-extra 0.5 inch (1.27 cm) at the BOTTOM of the page.
+The Manager process is the main entry point for the system. It is responsible for reading
+the system configuration and starting the other processes.
+
+Lease Managers are the first processes to be created and then the Transaction Managers.
+This, however, does not guarantee that the Lease Managers are ready before the Transaction Managers.
+Because of that, each process notifies the Manager, through a \textit{gRPC} call, that it is ready to work.
+
+After all Lease and Transaction Managers are ready, the Manager demands each one to start
+their operations. It is also at this time that the Manager will start the Client processes.
 
 %------------------------------------------------------------------------- 
-\SubSection{Margins and page numbering}
+\SubSection{Clients}
 
-All printed material, including text, illustrations, and charts, must be 
-kept within a print area 6-7/8 inches (17.5 cm) wide by 8-7/8 inches 
-(22.54 cm) high. Do not write or print anything outside the print area. 
-Number your pages lightly, in pencil, on the upper right-hand corners of 
-the BACKS of the pages (for example, 1/10, 2/10, or 1 of 10, 2 of 10, and 
-so forth). Please do not write on the fronts of the pages, nor on the 
-lower halves of the backs of the pages.
+Client processes are very simple, in the state that they cycle through the list of operations
+that they have to execute, over and over again.
 
+They will just send requests to a Transaction Managers predetermined by the Manager
+and wait for the response.
 
-%------------------------------------------------------------------------ 
-\SubSection{Formatting your paper}
+In case the given Transaction Manager is suspected of not being available,
+the Client will try another Transaction Manager it thinks is correct.
+This works by detecting if the gRPC call fails because the server is unable to accept it.
 
-All text must be in a two-column format. The total allowable width of 
-the text area is 6-7/8 inches (17.5 cm) wide by 8-7/8 inches (22.54 cm) 
-high. Columns are to be 3-1/4 inches (8.25 cm) wide, with a 5/16 inch 
-(0.8 cm) space between them. The main title (on the first page) should 
-begin 1.0 inch (2.54 cm) from the top edge of the page. The second and 
-following pages should begin 1.0 inch (2.54 cm) from the top edge. On 
-all pages, the bottom margin should be 1-1/8 inches (2.86 cm) from the 
-bottom edge of the page for $8.5 \times 11$-inch paper; for A4 paper, 
-approximately 1-5/8 inches (4.13 cm) from the bottom edge of the page.
+%------------------------------------------------------------------------- 
+\SubSection{Transaction Managers}
+
+\textbf{TODO}
+
+%------------------------------------------------------------------------- 
+\SubSection{Lease Managers}
+When the Lease Manager is ordered to start by the Manager, it will create the
+timer responsible for the creation of \textit{Paxos} instances.
+This timer runs every \textit{slotDuration} milliseconds.
+
+Lease requests are stored in a \textit{buffer queue}, so that no requests are lost between
+between \textit{Paxos} instances. Whenever a new instance is created, it will lock
+and fetch all requests from the \textit{buffer}, clear, and unlock it for more
+requests to be received.
+
+\textit{Paxos} is extended to allow the Proposer to provide a \textit{SHA256 hash} of
+the Lease requests (value) it wishes to propose on the Prepare message. The Propose
+message comes as a response to the \textit{gRPC} Prepare call, and will include the
+respondents' Lease requests if the hashes are different -- this allows for the Proposer
+to make more complete proposal.
 
 %------------------------------------------------------------------------- 
 \SubSection{Type-style and fonts}
