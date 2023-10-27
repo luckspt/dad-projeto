@@ -20,18 +20,18 @@ namespace TransactionManager.Leases
         public LeaseReceptionBuffer LeaseReceptionBuffer { get; }
         public LeaseRequestingServiceClient RequestingServiceClient { get; }
 
-        // The id of this transaction manager
-        private string managerId;
+        // This transaction manager
+        private TransactionManager transactionManager;
         // The keys and a queue of transaction managers that hold a lease
         private Dictionary<string, List<string>> leases;
 
-        public Leasing(string managerId, List<Peer> leaseManagers)
+        public Leasing(TransactionManager transactionManager, List<Peer> leaseManagers)
         {
-            this.managerId = managerId;
+            this.transactionManager = transactionManager;
             this.LeaseManagers = leaseManagers;
             this.Epoch = 0;
             this.leases = new Dictionary<string, List<string>>();
-            this.LeaseReceptionBuffer = new LeaseReceptionBuffer(this);
+            this.LeaseReceptionBuffer = new LeaseReceptionBuffer(transactionManager);
             this.RequestingServiceClient = new LeaseRequestingServiceClient(this);
         }
 
@@ -53,12 +53,12 @@ namespace TransactionManager.Leases
         {
             return this.leases.ContainsKey(key) &&
                 this.leases[key].Count != 0 &&
-                this.leases[key][0].Equals(this.managerId);
+                this.leases[key][0].Equals(this.transactionManager.ManagerId);
         }
 
         public bool HasLease(string key)
         {
-            return this.HasLease(key, this.managerId);
+            return this.HasLease(key, this.transactionManager.ManagerId);
         }
 
         public bool HasLeases(List<string> keys)
@@ -70,7 +70,7 @@ namespace TransactionManager.Leases
         {
             return this.RequestingServiceClient.RequestLeases(new LeaseRequesting.RequestLeasesRequest()
             {
-                RequesterTMId = this.managerId,
+                RequesterTMId = this.transactionManager.ManagerId,
                 LeaseKeys = keys,
             });
         }
@@ -106,7 +106,7 @@ namespace TransactionManager.Leases
 
         public void Free(List<string> keys)
         {
-            this.Free(keys, this.managerId);
+            this.Free(keys, this.transactionManager.ManagerId);
         }
     }
 }

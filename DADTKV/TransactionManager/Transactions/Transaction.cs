@@ -42,24 +42,24 @@ namespace TransactionManager.Transactions
         }
 
         // Block until we have all the leases
-        public void WaitToExecute(Leasing leasing, bool isRequestingDisabled = false)
+        public void WaitToExecute(TransactionManager transactionManager, bool isRequestingDisabled = false)
         {
             // Lock leasing because we want to Pulse/Wait for it
-            lock (leasing)
+            lock (transactionManager.Leasing)
             {
                 // Check if I need to request more leases
-                List<string> keysINeed = this.GetLeasesKeys().Where(key => !leasing.HasLease(key, this.ExecutingManagerId)).ToList();
+                List<string> keysINeed = this.GetLeasesKeys().Where(key => !transactionManager.Leasing.HasLease(key, this.ExecutingManagerId)).ToList();
                 if (keysINeed.Count > 0 && !isRequestingDisabled)
                 {
                     Logger.GetInstance().Log("Transaction.WaitToExecute", $"Don't have {string.Join(",", keysINeed)}, so I'm waiting");
-                    leasing.Request(keysINeed);
+                    transactionManager.Leasing.Request(keysINeed);
                 }
 
                 // Wait until we own all the leases
-                while (!keysINeed.All(x => leasing.HasLease(x)))
+                while (!keysINeed.All(x => transactionManager.Leasing.HasLease(x)))
                 {
                     Logger.GetInstance().Log("Transaction.WaitToExecute", $"Waiting for the leases...");
-                    Monitor.Wait(leasing);
+                    Monitor.Wait(transactionManager.Leasing);
                 }
             }
         }
@@ -75,7 +75,6 @@ namespace TransactionManager.Transactions
             }
         }
 
-        // Block until writes are propagated
         public void ExecuteWrites(TransactionManager transactionManager)
         {
             Replication.ReplicationMessage message = new Replication.ReplicationMessage
