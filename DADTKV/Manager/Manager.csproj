@@ -19,8 +19,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\Client\Client.csproj" />
 		<ProjectReference Include="..\Common\Common.csproj" />
 		<ProjectReference Include="..\ConfigParser\Parser.csproj" />
+		<ProjectReference Include="..\DADTKV\DADTKV.csproj" />
+		<ProjectReference Include="..\LeaseManager\LeaseManager.csproj" />
+		<ProjectReference Include="..\ManagerClientServices\ManagerClientServices.csproj" />
+		<ProjectReference Include="..\TransactionManager\TransactionManager.csproj" />
 
 		<Protobuf Include="protos\Manager.proto" GrpcServices="Client" />
 		<Protobuf Include="protos\ManagerStatusHook.proto" GrpcServices="Server" />

@@ -14,35 +14,44 @@ namespace TransactionManager.Transactions
 {
     internal class Transaction
     {
-        public string ClientId { get; }
+        public string ExecutingManagerId { get; } // For some reason we receive this but never use it... Whatever..
         public string Guid { get; }
         public List<ReadOperation> ReadOperations { get; }
         public List<WriteOperation> WriteOperations { get; }
 
-        public Transaction(string clientId, string guid, List<ReadOperation> readOperations, List<WriteOperation> writeOperations)
+        public Transaction(string executingManagerId, string guid, List<ReadOperation> readOperations, List<WriteOperation> writeOperations)
         {
-            this.ClientId = clientId;
+            this.ExecutingManagerId = executingManagerId;
             this.Guid = guid;
             this.ReadOperations = readOperations;
             this.WriteOperations = writeOperations;
         }
 
-        // Block until we have all the leases
-        public void WaitToExecute(Leasing leasing)
+        public static Transaction FromReplicationMessage(Replication.ReplicationMessage message)
         {
-            Program.ManagerClient.Status = "WaitingLease";
+            return new Transaction(message.ExecutingManagerId, message.Guid,
+                message.ReadDadInts.Select(x => new ReadOperation(x)).ToList(),
+                message.DadInts.Select(x => new WriteOperation(x.Key, x.Value)).ToList());
+        }
 
+        public List<string> GetLeasesKeys()
+        {
+            return this.ReadOperations.Select(t => t.Key)
+                .Concat(this.WriteOperations.Select(t => t.Key))
+                .ToList();
+        }
+
+        // Block until we have all the leases
+        public void WaitToExecute(Leasing leasing, bool isRequestingDisabled = false)
+        {
             // Lock leasing because we want to Pulse/Wait for it
             lock (leasing)
             {
-                List<string> keysToReadKeys = this.ReadOperations.Select(t => t.Key).ToList();
-                List<string> keysToWriteKeys = this.WriteOperations.Select(t => t.Key).ToList();
-
                 // Check if I need to request more leases
-                List<string> keysINeed = keysToReadKeys.Concat(keysToWriteKeys).Where(key => !leasing.HasLease(key)).ToList();
-                if (keysINeed.Count > 0)
+                List<string> keysINeed = this.GetLeasesKeys().Where(key => !leasing.HasLease(key, this.ExecutingManagerId)).ToList();
+                if (keysINeed.Count > 0 && !isRequestingDisabled)
                 {
-                    Logger.GetInstance().Log("Transaction.WaitToExecute", $"I don't have {string.Join(",", keysINeed)}, so I'm requesting");
+                    Logger.GetInstance().Log("Transaction.WaitToExecute", $"Don't have {string.Join(",", keysINeed)}, so I'm waiting");
                     leasing.Request(keysINeed);
                 }
 
@@ -55,10 +64,8 @@ namespace TransactionManager.Transactions
             }
         }
 
-        public List<DadInt> ExecuteReads(Leasing leasing, KVStore kvStore)
+        public List<DadInt> ExecuteReads(KVStore kvStore)
         {
-            Program.ManagerClient.Status = "ExecutingTransaction";
-
             lock (kvStore)
             {
                 List<string> keysToReadKeys = this.ReadOperations.Select(t => t.Key).ToList();
@@ -71,12 +78,12 @@ namespace TransactionManager.Transactions
         // Block until writes are propagated
         public void ExecuteWrites(TransactionManager transactionManager)
         {
-            Program.ManagerClient.Status = "ExecutingTransaction";
-
-            Replication.BroadcastMessage message = new Replication.BroadcastMessage
+            Replication.ReplicationMessage message = new Replication.ReplicationMessage
             {
                 Guid = this.Guid,
-                DadInts = this.DadIntsToWrite(transactionManager.KVStore, transactionManager.Leasing.Epoch)
+                ExecutingManagerId = this.ExecutingManagerId,
+                DadInts = this.DadIntsToWrite(transactionManager.KVStore, transactionManager.Leasing.Epoch),
+                ReadDadInts = this.ReadOperations.Select(x => x.Key).ToList(),
             };
 
             transactionManager.TransactionReplication.ServiceClient.URBroadcast(message, transactionManager.ManagerId);
@@ -106,21 +113,6 @@ namespace TransactionManager.Transactions
             }).ToList();
 
             return dataToWrite;
-        }
-
-        public void CleanupLeases(Leasing leasing)
-        {
-            List<string> keysToReadKeys = this.ReadOperations.Select(t => t.Key).ToList();
-            List<string> keysToWriteKeys = this.WriteOperations.Select(t => t.Key).ToList();
-
-            List<string> allKeys = keysToReadKeys.Concat(keysToWriteKeys).ToList();
-            List<string> conflictingLeases = allKeys
-                    .Where(x => leasing.IsConflicting(x))
-                    .ToList();
-
-            // Free them
-            if (conflictingLeases.Count > 0)
-                leasing.Free(conflictingLeases);
         }
     }
 

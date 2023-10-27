@@ -67,9 +67,14 @@ namespace Client
                             var rwCommand = (ReadWriteSetConfigLine)command;
 
                             List<DadInt> readValues = this.transactions.TxSubmit(this.id, rwCommand.ReadSet, rwCommand.WriteSet);
-                            string readValuesStr = string.Join(", ", readValues.Select(v => v.ToString()));
 
-                            System.Console.WriteLine($"Values read: {readValuesStr}");
+                            if (readValues.Count == 0)
+                                System.Console.WriteLine($"No values read.");
+                            else
+                            {
+                                string readValuesStr = string.Join(", ", readValues.Select(v => v.ToString()));
+                                System.Console.WriteLine($"Values read: {readValuesStr}");
+                            }
                             break;
                     }
                 }

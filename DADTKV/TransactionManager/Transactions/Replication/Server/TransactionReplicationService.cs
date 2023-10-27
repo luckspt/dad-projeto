@@ -32,23 +32,27 @@ namespace TransactionManager.Transactions.Replication.Server
         }
     }
 
-    internal class BroadcastMessageDTO
+    internal class ReplicationMessageDTO
     {
-        public static BroadcastMessage fromProtobuf(global::BroadcastMessage message)
+        public static ReplicationMessage fromProtobuf(global::ReplicationMessage message)
         {
-            return new BroadcastMessage()
+            return new ReplicationMessage()
             {
                 Guid = message.Guid,
-                DadInts = message.DadInts.Select(RPCStoreDadIntDTO.fromProtobuf).ToList()
+                ExecutingManagerId = message.ExecutingManagerId,
+                DadInts = message.DadInts.Select(RPCStoreDadIntDTO.fromProtobuf).ToList(),
+                ReadDadInts = message.ReadDadInts.ToList(),
             };
         }
 
-        public static global::BroadcastMessage toProtobuf(BroadcastMessage message)
+        public static global::ReplicationMessage toProtobuf(ReplicationMessage message)
         {
-            return new global::BroadcastMessage()
+            return new global::ReplicationMessage()
             {
                 Guid = message.Guid,
-                DadInts = { message.DadInts.Select(RPCStoreDadIntDTO.toProtobuf).ToList() }
+                ExecutingManagerId = message.ExecutingManagerId,
+                DadInts = { message.DadInts.Select(RPCStoreDadIntDTO.toProtobuf).ToList() },
+                ReadDadInts = { message.ReadDadInts.ToList() }
             };
         }
     }
@@ -65,7 +69,7 @@ namespace TransactionManager.Transactions.Replication.Server
         {
             return Task.FromResult(new URBBroadcastResponse
             {
-                Ok = this.serverLogic.URBBroadcast(BroadcastMessageDTO.fromProtobuf(request.Message), request.SenderId)
+                Ok = this.serverLogic.URBBroadcast(ReplicationMessageDTO.fromProtobuf(request.Message), request.SenderId)
             });
         }
 
@@ -73,7 +77,7 @@ namespace TransactionManager.Transactions.Replication.Server
         {
             return Task.FromResult(new BEBDeliverResponse
             {
-                Ok = this.serverLogic.BEBDeliver(BroadcastMessageDTO.fromProtobuf(request.Message), request.SenderId)
+                Ok = this.serverLogic.BEBDeliver(ReplicationMessageDTO.fromProtobuf(request.Message), request.SenderId)
             });
         }
     }

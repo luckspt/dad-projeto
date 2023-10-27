@@ -13,22 +13,22 @@ namespace TransactionManager.Transactions.Replication
     {
         public TransactionReplicationServiceClient ServiceClient { get; }
         public HashSet<Peer> Correct { get; }
-        private Dictionary<BroadcastMessage, HashSet<string>> pending;
-        private HashSet<BroadcastMessage> delivered;
-        private Dictionary<BroadcastMessage, HashSet<string>> acks;
-        private Action<BroadcastMessage> callOnDeliver;
+        private Dictionary<ReplicationMessage, HashSet<string>> pending;
+        private HashSet<ReplicationMessage> delivered;
+        private Dictionary<ReplicationMessage, HashSet<string>> acks;
+        private Action<ReplicationMessage> callOnDeliver;
 
-        public TransactionReplication(HashSet<Peer> correct, Action<BroadcastMessage> callOnDeliver)
+        public TransactionReplication(HashSet<Peer> correct, Action<ReplicationMessage> callOnDeliver)
         {
             this.ServiceClient = new TransactionReplicationServiceClient(this);
             this.Correct = correct;
-            this.pending = new Dictionary<BroadcastMessage, HashSet<string>>();
-            this.delivered = new HashSet<BroadcastMessage>();
-            this.acks = new Dictionary<BroadcastMessage, HashSet<string>>();
+            this.pending = new Dictionary<ReplicationMessage, HashSet<string>>();
+            this.delivered = new HashSet<ReplicationMessage>();
+            this.acks = new Dictionary<ReplicationMessage, HashSet<string>>();
             this.callOnDeliver = callOnDeliver;
         }
 
-        public void AddToPending(BroadcastMessage message, string sender)
+        public void AddToPending(ReplicationMessage message, string sender)
         {
             if (!this.pending.ContainsKey(message))
                 this.pending.Add(message, new HashSet<string>() { sender });
@@ -36,13 +36,13 @@ namespace TransactionManager.Transactions.Replication
                 this.pending[message].Add(sender);
         }
 
-        public bool IsPending(BroadcastMessage message, string sender)
+        public bool IsPending(ReplicationMessage message, string sender)
         {
             return this.pending.ContainsKey(message)
                 && this.pending[message].Contains(sender);
         }
 
-        public void AddToAcks(BroadcastMessage message, string sender)
+        public void AddToAcks(ReplicationMessage message, string sender)
         {
             if (!this.acks.ContainsKey(message))
                 this.acks.Add(message, new HashSet<string> { sender });
@@ -52,19 +52,19 @@ namespace TransactionManager.Transactions.Replication
                 this.acks[message].Add(sender);
         }
 
-        public bool CanDeliver(BroadcastMessage message)
+        public bool CanDeliver(ReplicationMessage message)
         {
             // Majority-Acks URB
             int howMany = this.Correct.Where(p => this.acks[message].Contains(p.Id)).Count();
             return howMany > (this.Correct.Count() / 2);
         }
 
-        public bool HasBeenDelivered(BroadcastMessage message)
+        public bool HasBeenDelivered(ReplicationMessage message)
         {
             return this.delivered.Contains(message);
         }
 
-        public void Deliver(BroadcastMessage message)
+        public void Deliver(ReplicationMessage message)
         {
             this.delivered.Add(message);
             this.callOnDeliver(message);

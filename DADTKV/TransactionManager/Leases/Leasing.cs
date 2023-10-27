@@ -49,11 +49,16 @@ namespace TransactionManager.Leases
             return this.leases[key].Count > 1;
         }
 
-        public bool HasLease(string key)
+        public bool HasLease(string key, string ownerId)
         {
             return this.leases.ContainsKey(key) &&
                 this.leases[key].Count != 0 &&
                 this.leases[key][0].Equals(this.managerId);
+        }
+
+        public bool HasLease(string key)
+        {
+            return this.HasLease(key, this.managerId);
         }
 
         public bool HasLeases(List<string> keys)
@@ -77,7 +82,6 @@ namespace TransactionManager.Leases
             {
                 foreach (string key in newKeys.Keys)
                 {
-                    // TODO: should we copy or just reference?
                     if (this.leases.ContainsKey(key))
                         this.leases[key].AddRange(newKeys[key]);
                     else
@@ -88,19 +92,21 @@ namespace TransactionManager.Leases
             return true;
         }
 
-        public void Free(List<string> keys)
+        public void Free(List<string> keys, string ownerId)
         {
-            // TODO: implement
-            // TODO: if it holds a lease that conflicts with another transaction manager, free it after executing the transaction.
-            // - otherwise, it can keep it indefinitely
             lock (this)
             {
                 foreach (string key in keys)
                 {
-                    if (this.leases.ContainsKey(key) && this.leases[key][0].Equals(this.managerId))
+                    if (this.leases.ContainsKey(key) && this.leases[key][0].Equals(ownerId))
                         this.leases[key].RemoveAt(0);
                 }
             }
+        }
+
+        public void Free(List<string> keys)
+        {
+            this.Free(keys, this.managerId);
         }
     }
 }

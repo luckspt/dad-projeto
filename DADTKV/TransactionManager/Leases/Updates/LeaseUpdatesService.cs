@@ -22,7 +22,6 @@ namespace TransactionManager.Leases.LeaseUpdates
             return new LeaseUpdateRequest
             {
                 Epoch = updateRequest.Epoch,
-                // TODO: What if leases is empty?
                 Leases = updateRequest.Leases.ToDictionary(x => x.Key, x => x.TargetTMIds.ToList())
             };
         }

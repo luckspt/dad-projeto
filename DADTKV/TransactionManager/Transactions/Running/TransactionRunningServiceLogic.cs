@@ -26,7 +26,7 @@ namespace TransactionManager.Transactions.Replication
 
                 // Create Transaction
                 Transaction transaction = new Transaction(
-                    clientId,
+                    this.transactionManager.ManagerId,
                     Guid.NewGuid().ToString(),
                     keysToRead,
                     keysToWrite
