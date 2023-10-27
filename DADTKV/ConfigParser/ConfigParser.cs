@@ -39,8 +39,7 @@ namespace Parser
 
         public Dictionary<ConfigType, List<ConfigLine>> Config { get; }
 
-        // TODO: add status (client script)
-        public ConfigParser(string path) : this(path, new List<Parser>() { new ClientParser(), new ServerParser(), new ServerStateParser(), new StartTimeParser(), new SlotsParser(), new SlotDurationParser(), new ReadWriteSetParser(), new WaitParser() }, "#")
+        public ConfigParser(string path) : this(path, new List<Parser>() { new ClientParser(), new ServerParser(), new ServerStateParser(), new StartTimeParser(), new SlotsParser(), new SlotDurationParser(), new ReadWriteSetParser(), new WaitParser(), new StatusParser() }, "#")
         { }
 
         public ConfigParser(string path, List<Parser> parsers) : this(path, parsers, "#")

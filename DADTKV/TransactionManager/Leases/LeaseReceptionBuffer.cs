@@ -26,6 +26,11 @@ namespace TransactionManager.Leases
             this.buffer = new SortedList<int, LeaseUpdates.LeaseUpdateRequest>();
         }
 
+        public List<int> GetEpochsToApply()
+        {
+            return this.buffer.Keys.ToList();
+        }
+
         public void Add(LeaseUpdates.LeaseUpdateRequest update)
         {
             lock (this)

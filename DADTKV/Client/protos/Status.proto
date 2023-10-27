@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+service StatusService {
+	rpc Status(Empty) returns (Empty);
+}
+
+message Empty {
+	bool dummy = 1;
+}

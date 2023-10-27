@@ -45,6 +45,7 @@ namespace Manager
             crashToolStripMenuItem = new ToolStripMenuItem();
             delayToolStripMenuItem = new ToolStripMenuItem();
             hookConfigToolStripMenuItem = new ToolStripMenuItem();
+            btnKillAll = new Button();
             ctxLMs.SuspendLayout();
             SuspendLayout();
             // 
@@ -142,32 +143,43 @@ namespace Manager
             // 
             ctxLMs.Items.AddRange(new ToolStripItem[] { crashToolStripMenuItem, delayToolStripMenuItem, hookConfigToolStripMenuItem });
             ctxLMs.Name = "ctxLMs";
-            ctxLMs.Size = new Size(181, 92);
+            ctxLMs.Size = new Size(143, 70);
             // 
             // crashToolStripMenuItem
             // 
             crashToolStripMenuItem.Name = "crashToolStripMenuItem";
-            crashToolStripMenuItem.Size = new Size(180, 22);
+            crashToolStripMenuItem.Size = new Size(142, 22);
             crashToolStripMenuItem.Text = "Crash";
             crashToolStripMenuItem.Click += crashToolStripMenuItem_Click;
             // 
             // delayToolStripMenuItem
             // 
             delayToolStripMenuItem.Name = "delayToolStripMenuItem";
-            delayToolStripMenuItem.Size = new Size(180, 22);
+            delayToolStripMenuItem.Size = new Size(142, 22);
             delayToolStripMenuItem.Text = "Delay";
             // 
             // hookConfigToolStripMenuItem
             // 
             hookConfigToolStripMenuItem.Name = "hookConfigToolStripMenuItem";
-            hookConfigToolStripMenuItem.Size = new Size(180, 22);
+            hookConfigToolStripMenuItem.Size = new Size(142, 22);
             hookConfigToolStripMenuItem.Text = "Hook Config";
+            // 
+            // btnKillAll
+            // 
+            btnKillAll.Location = new Point(753, 397);
+            btnKillAll.Name = "btnKillAll";
+            btnKillAll.Size = new Size(75, 23);
+            btnKillAll.TabIndex = 13;
+            btnKillAll.Text = "Kill All";
+            btnKillAll.UseVisualStyleBackColor = true;
+            btnKillAll.Click += btnKillAllClick;
             // 
             // Main
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(844, 462);
+            Controls.Add(btnKillAll);
             Controls.Add(lblClientsLabel);
             Controls.Add(lblTMsLabel);
             Controls.Add(lblLMsLabel);
@@ -203,5 +215,7 @@ namespace Manager
         private ToolStripMenuItem crashToolStripMenuItem;
         private ToolStripMenuItem delayToolStripMenuItem;
         private ToolStripMenuItem hookConfigToolStripMenuItem;
+        private Button Kill;
+        private Button btnKillAll;
     }
 }

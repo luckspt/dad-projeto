@@ -22,7 +22,7 @@ message PromiseResponse {
 	int32 slot = 1;
 	int32 writeTimestamp = 2;
 	repeated TmLeases value = 3; // optional
-	repeated TmLeases selfLeases = 4; // TODO: implement
+	repeated TmLeases selfLeases = 4;
 }
 
 message AcceptRequest {

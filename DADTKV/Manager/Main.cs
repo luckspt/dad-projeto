@@ -1,5 +1,6 @@
-using Common;
+﻿using Common;
 using Manager.Manager;
+using Manager.Status.Server;
 using Manager.StatusHook;
 using Parser;
 using Parser.Parsers;
@@ -77,6 +78,9 @@ namespace Manager
                                 .Where(server => server.First.Type == ServerType.LeaseManager)
                                 .ToList();
             }
+
+            Program.Servers = Main.TransactionManagers.Select(x => new Peer(x.First.ID, x.First.Url)).Concat(
+                                    Main.LeaseManagers.Select(x => new Peer(x.First.ID, x.First.Url))).ToList();
 
             this.startProcessMonitoring();
             this.startProcesses();
@@ -184,14 +188,14 @@ namespace Manager
             foreach (Pair<ServerConfigLine, EntityStatus> lm in Main.LeaseManagers)
             {
                 string arguments = $"{Program.ManagerAddress} {lm.First.ID} {lm.First.Url} {slots} {slotDuration}";
-                Process.Start(solutionDirectory + "/LeaseManager/bin/Debug/net6.0/LeaseManager.exe", arguments);
+                lm.Second.Process = Process.Start(solutionDirectory + "/LeaseManager/bin/Debug/net6.0/LeaseManager.exe", arguments);
             }
 
             // Start TMs
             foreach (Pair<ServerConfigLine, EntityStatus> tm in Main.TransactionManagers)
             {
                 string arguments = $"{Program.ManagerAddress} {tm.First.ID} {tm.First.Url}";
-                Process.Start(solutionDirectory + "/TransactionManager/bin/Debug/net6.0/TransactionManager.exe", arguments);
+                tm.Second.Process = Process.Start(solutionDirectory + "/TransactionManager/bin/Debug/net6.0/TransactionManager.exe", arguments);
             }
 
             Thread thread = new Thread(() =>
@@ -235,10 +239,9 @@ namespace Manager
                     Pair<ClientConfigLine, EntityStatus> client = Main.Clients[i];
                     Logger.GetInstance().Log("Main", $"Starting Client {client.First.ID}");
 
-                    // TODO REMOVE BREAK!!!!
-                    break;
                     string arguments = $"{client.First.ID} {client.First.ScriptPath} {i % Main.TransactionManagers.Count} {string.Join(" ", Main.TransactionManagers.Select(tm => new Peer(tm.First.ID, tm.First.Url).FullRepresentation()))}";
-                    Process.Start(solutionDirectory + "/Client/bin/Debug/net6.0/Client.exe", arguments);
+                    client.Second.Process = Process.Start(solutionDirectory + "/Client/bin/Debug/net6.0/Client.exe", arguments);
+                    client.Second.Status = ClientStatus.Idle;
                 }
             });
 
@@ -302,11 +305,42 @@ namespace Manager
             Main.ManagerClient.Crash(lm.First.Url);
             lm.Second.Status = LMStatus.Crashed;
         }
+
+        private void btnKillAllClick(object sender, EventArgs e)
+        {
+            // Kill from top to bottom
+            foreach (var lm in Main.LeaseManagers)
+            {
+                lm.Second.Process.Kill();
+                lm.Second.Process.Close();
+                lm.Second.Process.Dispose();
+            }
+
+            foreach (var tm in Main.TransactionManagers)
+            {
+                tm.Second.Process.Kill();
+                tm.Second.Process.Close();
+                tm.Second.Process.Dispose();
+            }
+
+            foreach (var client in Main.Clients)
+            {
+                client.Second.Process.Kill();
+                client.Second.Process.Close();
+                client.Second.Process.Dispose();
+            }
+
+            // Kill ourselves 💀
+            this.Close();
+            this.Dispose();
+            Environment.Exit(0);
+        }
     }
 
     public struct EntityStatus
     {
         public Color Status { get; set; }
+        public Process Process { get; set; }
     }
 
     class ClientStatus

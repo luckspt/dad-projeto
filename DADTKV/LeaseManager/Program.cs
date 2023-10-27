@@ -38,6 +38,7 @@ namespace LeaseManager
                     ManagerService.BindService(new ManagerClientServices.ManagerService(managerServiceLogic)),
                     global::LeaseRequestingService.BindService(new Leasing.Requesting.LeaseRequestingService(leaseRequestingServiceLogic)),
                     global::PaxosService.BindService(new Paxos.Server.PaxosService(new PaxosServiceLogic(lm.TimeSlots))),
+                    global::StatusService.BindService(new Status.StatusService(new Status.StatusServiceLogic(lm)))
                 },
                 Ports = { serverPort }
             };

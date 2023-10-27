@@ -8,10 +8,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <None Remove="protos\LeaseUpdates.proto" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<None Include="..\.editorconfig" Link=".editorconfig" />
 	</ItemGroup>
 
@@ -31,6 +27,7 @@
 		<Protobuf Include="protos\Paxos.proto" GrpcServices="Both" />
 		<Protobuf Include="protos\LeaseRequesting.proto" GrpcServices="Server" />
 		<Protobuf Include="protos\LeaseUpdates.proto" GrpcServices="Client" />
+		<Protobuf Include="protos\Status.proto" GrpcServices="Server" />
 	</ItemGroup>
 
 </Project>

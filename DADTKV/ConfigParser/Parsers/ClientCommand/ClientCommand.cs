@@ -17,6 +17,7 @@ namespace Parser.Parsers.ClientCommand
         Wait,
         // Transaction (T)
         ReadWriteSet,
-        // TODO status
+        // Status (S)
+        Status,
     }
 }
