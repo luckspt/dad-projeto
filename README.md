@@ -1,47 +1,14 @@
 # DADTKV
+<small>Pelo sim pelo n√£o, fa√ßa **Rebuild** da Solu√ß√£o.</small>
 
-No geral, n„o h· toler‚ncia a faltas nem suspeitas de outros processos.
+## Execu√ß√£o normal
+Para executar o projeto, `CTRL+F5` (ou doutra forma) para iniciar o projeto `Manager`.
 
-LeaseManager est· implementado duma forma b·sica.
+Este projeto pede para selecionar o ficheiro de configura√ß√£o do sistema e depois trabalha de forma aut√≥noma.
 
-TransactionManager e Cliente por comeÁar.
+## Debug
+Os processos s√£o iniciados com argumentos. Para tal, deve passar esses argumentos ao projeto que deseja fazer *Debug*. Veja como [aqui](https://stackoverflow.com/a/276547).
 
-## Nota importante
-O comando T È ignorado e a primeira inst‚ncia do Paxos inicia logo que possÌvel (apÛs D milissegundos de todos os LeaseManagers estarem prontos)
+No `Program.cs` dos projetos `Client`, `TransactionManager`, e `LeaseManager`, est√£o definidos num g√©nero de "javadoc" os argumentos que esperam receber.
 
-## LeaseManager
-### Paxos
-- [x] gRPC
-- [x] Em sÈrie
-- [x] Em paralelo (sem optimizaÁıes)
-- [x] Chegar a consenso sobre value (leases)
-- [ ] Notificar Learners
-- [ ] Tolerar falhas
-	> Tolera desde que n„o seja do proposer ativo.
-- [	 ] Iniciar uma nova Època no mesmo slot
-### Leases
-- [x] Receber pedidos de leases
-	> Atualmente est· simulado no Program.cs do projeto LeaseManager porque o TransactionManager n„o est· implementado
-- [ ] Quando h· diferenÁa de leases entre LMs, concatenar as leases
-	- [x] VerificaÁ„o de hashes (enviar hash do Proposer no Prepare)
-	- [ ] Concatenar as leases
-
-## Manager
-- [x] gRPC
-- [x] Iniciar os processos
-- [ ] Configurar processos iniciados
-	- [x] LeaseManager
-	- [ ] TransactionManager
-	- [ ] Client
-- [x] VisualizaÁ„o de quem est· ativo ou n„o
-- [ ] "Crashar" um processo
-	- [x] LeaseManager
-	- [ ] TransactionManager
-	- [ ] Client
-
-
-## TransactionManager
-N„o h· nada de interessante para mostrar.
-
-## Clients
-N„o est· nada feito.
+> Se necessitar de ajuda para descobrir os argumentos: fazer *Debug* do `Manager` e ver os valores dos argumentos em `Main.cs`, nas linhas `190`, `197`, e `242`.
