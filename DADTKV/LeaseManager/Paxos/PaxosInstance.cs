@@ -166,7 +166,7 @@ namespace LeaseManager.Paxos
                 this.promises.ReceivedCount++;
 
                 // -1 because we also count
-                int neededToAccept = this.Acceptors.Count / 2;
+                int neededToAccept = (this.Acceptors.Count - 1) / 2 + 1;
 
                 Logger.GetInstance().Log($"Paxos.{this.Slot}.{this.Proposal.Number}", $"ProcessPromise (promises.ReceivedCount={this.promises.ReceivedCount}, neededToAccept={neededToAccept}, promise.writeTimestamp={promise.WriteTimestamp}, greatestWriteTimestamp={this.promises.GreatestWriteTimestamp}, receivedSelfLeases={promise.SelfLeases != null})");
                 // If we already have the majority, we don't care about the rest
@@ -297,7 +297,7 @@ namespace LeaseManager.Paxos
                 this.accepteds.ReceivedCount[accepted.ProposalNumber] = count + 1;
 
                 // -1 because we also count
-                int neededToAccept = this.Acceptors.Count / 2;
+                int neededToAccept = (this.Acceptors.Count - 1) / 2 + 1;
 
                 Logger.GetInstance().Log($"Paxos.{this.Slot}.{this.Proposal.Number}", $"ProcessAccepted (acceptedsReceivedForProposalNumber={count}, neededToAccept={neededToAccept})");
 

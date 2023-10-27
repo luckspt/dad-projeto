@@ -56,7 +56,7 @@ namespace TransactionManager.Transactions.Replication
         {
             // Majority-Acks URB
             int howMany = this.Correct.Where(p => this.acks[message].Contains(p.Id)).Count();
-            return howMany > (this.Correct.Count() / 2);
+            return howMany > (this.Correct.Count() - 1) / 2 + 1;
         }
 
         public bool HasBeenDelivered(ReplicationMessage message)
