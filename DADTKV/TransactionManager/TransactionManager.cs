@@ -160,8 +160,8 @@ namespace TransactionManager
             lock (this.Leasing)
             {
                 List<string> leasesToCheck = message.ReadDadInts.Concat(message.DadInts.Select(x => x.Key)).ToList();
-                List<string> leasesToFree = leasesToCheck.Where(x => this.Leasing.HasLease(x, message.ExecutingManagerId)).ToList();
-                Logger.GetInstance().Log("OnTransactionReplicated", $"Will free checked={string.Join(",", leasesToCheck)} toFree={string.Join(",", leasesToFree)}");
+                List<string> leasesToFree = leasesToCheck.Where(x => this.Leasing.HasLease(x, message.ExecutingManagerId) && this.Leasing.IsConflicting(x)).ToList();
+                Logger.GetInstance().Log("OnTransactionReplicated", $"Will free? checked={string.Join(",", leasesToCheck)} toFree={string.Join(",", leasesToFree)}");
                 this.Leasing.Free(leasesToFree, message.ExecutingManagerId);
             }
         }

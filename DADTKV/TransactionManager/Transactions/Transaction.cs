@@ -56,7 +56,7 @@ namespace TransactionManager.Transactions
                 }
 
                 // Wait until we own all the leases
-                while (!keysINeed.All(x => transactionManager.Leasing.HasLease(x)))
+                while (!keysINeed.All(x => transactionManager.Leasing.HasLease(x, this.ExecutingManagerId)))
                 {
                     Logger.GetInstance().Log("Transaction.WaitToExecute", $"Waiting for the leases...");
                     Monitor.Wait(transactionManager.Leasing);

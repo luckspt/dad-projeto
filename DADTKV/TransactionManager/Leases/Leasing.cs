@@ -53,7 +53,7 @@ namespace TransactionManager.Leases
         {
             return this.leases.ContainsKey(key) &&
                 this.leases[key].Count != 0 &&
-                this.leases[key][0].Equals(this.transactionManager.ManagerId);
+                this.leases[key][0].Equals(ownerId);
         }
 
         public bool HasLease(string key)

@@ -53,23 +53,22 @@ namespace TransactionManager.Leases.LeaseUpdates
                         this.transactionManager.Leasing.Epoch = update.Epoch;
 
                     if (count == needed)
-                        this.ApplyUpdate(update);
+                    {
+                        // Add to the buffer (don't process now) because of applying lease updates IN ORDER!!
+                        // it's fine if we block; we will eventually receive a response from paxos because it guarantees termination
+                        Logger.GetInstance().Log("LeaseUpdateService.ApplyUpdate", $"Got a majority so add it to updates buffer");
+                        this.transactionManager.Leasing.LeaseReceptionBuffer.Add(update);
+                    }
 
                     this.receptionCounts[update.Epoch] = count;
+
+                    if (count == this.transactionManager.Leasing.LeaseManagers.Count)
+                        this.receptionCounts.Remove(update.Epoch);
                 }
             }
 
 
             return true;
-        }
-
-        private void ApplyUpdate(LeaseUpdateRequest update)
-        {
-            Logger.GetInstance().Log("LeaseUpdateService.ApplyUpdate", $"Got a majority so add it to updates buffer");
-            this.transactionManager.Leasing.LeaseReceptionBuffer.Add(update);
-
-            // TODO when can we garbage collect this?
-            // this.receptionCounts.Remove(update.Epoch);
         }
     }
 }
