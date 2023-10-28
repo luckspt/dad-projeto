@@ -21,7 +21,7 @@ namespace TransactionManager.Transactions.Replication.Client
             this.transactionReplication = transactionReplication;
         }
 
-        public void URBroadcast(BroadcastMessage message, string senderId)
+        public void URBroadcast(ReplicationMessage message, string senderId)
         {
             lock (this.transactionReplication.Correct)
             {
@@ -34,7 +34,7 @@ namespace TransactionManager.Transactions.Replication.Client
                         {
                             this.GetClient(correct.Address).URBBroadcast(new URBBroadcastRequest
                             {
-                                Message = BroadcastMessageDTO.toProtobuf(message),
+                                Message = ReplicationMessageDTO.toProtobuf(message),
                                 SenderId = senderId
                             });
                             Logger.GetInstance().Log($"TransactionReplicationService.URB", $"Sending message to {correct.Address}");
@@ -48,7 +48,7 @@ namespace TransactionManager.Transactions.Replication.Client
             }
         }
 
-        public void BEBroadcast(BroadcastMessage message, string senderId)
+        public void BEBroadcast(ReplicationMessage message, string senderId)
         {
             lock (this.transactionReplication.Correct)
             {
@@ -61,7 +61,7 @@ namespace TransactionManager.Transactions.Replication.Client
                             Logger.GetInstance().Log($"TransactionReplicationService.BEB", $"Sending message to {correct.Address}");
                             this.GetClient(correct.Address).BEBDeliver(new BEBDeliverRequest
                             {
-                                Message = BroadcastMessageDTO.toProtobuf(message),
+                                Message = ReplicationMessageDTO.toProtobuf(message),
                                 SenderId = senderId
                             });
                         }

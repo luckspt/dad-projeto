@@ -93,7 +93,7 @@ namespace TransactionManager.Leases.LeaseRequesting
                     {
                         acks++;
 
-                        if (acks >= this.leasing.LeaseManagers.Count / 2)
+                        if (acks >= (this.leasing.LeaseManagers.Count - 1) / 2 + 1)
                         {
                             return true;
                         }

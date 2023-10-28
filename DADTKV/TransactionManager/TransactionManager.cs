@@ -42,7 +42,7 @@ namespace TransactionManager
 
         public void Start(List<string> leaseManagersAddresses, List<string> transactionManagersAddresses)
         {
-            this.Leasing = new Leasing(this.ManagerId, leaseManagersAddresses.Select(address => Peer.FromString(address)).ToList());
+            this.Leasing = new Leasing(this, leaseManagersAddresses.Select(address => Peer.FromString(address)).ToList());
             this.TransactionManagers = transactionManagersAddresses.Select(address => Peer.FromString(address)).ToList();
             this.TransactionReplication = new TransactionReplication(this.TransactionManagers.ToHashSet(), this.OnTransactionReplicated);
 
@@ -56,9 +56,9 @@ namespace TransactionManager
 
         private void HandleTransactionRequests()
         {
+            Transactions.Transaction transaction;
             lock (this.TransactionsBuffer)
             {
-
                 while (this.TransactionsBuffer.Count == 0)
                 {
                     Logger.GetInstance().Log($"TransactionManager.HandleTransactionRequests", $"Waiting for requests");
@@ -66,64 +66,74 @@ namespace TransactionManager
                 }
 
                 // Get the latest transaction in the Queue
-                Transactions.Transaction transaction = this.TransactionsBuffer.Take();
-                Logger.GetInstance().Log($"TransactionManager.HandleTransactionRequests", $"Working on a transaction (waiting for leases)");
+                transaction = this.TransactionsBuffer.Take();
+            }
 
-                // Wait until we can operate on it (we own all the necessary leases)
-                transaction.WaitToExecute(this.Leasing);
+            Logger.GetInstance().Log($"TransactionManager.HandleTransactionRequests", $"Working on a transaction (waiting for leases)");
 
+            // Wait until we can operate on it (we own all the necessary leases)
+            Program.ManagerClient.Status = "WaitingLease";
+            transaction.WaitToExecute(this);
+
+            KeyValuePair<TransactionReplyLock, Transactions.Transaction> replyLock;
+            lock (this.TransactionReplyLocks)
+            {
+                replyLock = this.TransactionReplyLocks[transaction.Guid];
+            }
+
+            // Execute the reads and then the writes
+            lock (replyLock.Key)
+            {
+                Program.ManagerClient.Status = "ExecutingTransaction";
                 Logger.GetInstance().Log($"TransactionManager.HandleTransactionRequests", $"Working on a transaction (has leases)");
-                // Execute the reads and then the writes
-                KeyValuePair<TransactionReplyLock, Transactions.Transaction> replyLock = this.TransactionReplyLocks[transaction.Guid];
-                lock (replyLock.Key)
-                {
-                    // Read
-                    List<DadInt> reads = transaction.ExecuteReads(this.Leasing, this.KVStore);
 
-                    // Populate the ReplyValue and Pulse it
-                    replyLock.Key.ReplyValue = reads;
-                    Monitor.Pulse(replyLock.Key);
-                    Logger.GetInstance().Log($"TransactionManager.HandleTransactionRequests", $"Reads executed, Pulsing thread");
+                // Read
+                List<DadInt> reads = transaction.ExecuteReads(this.KVStore);
 
-                    // Write (async messages)
-                    transaction.ExecuteWrites(this);
-                }
+                // Populate the ReplyValue and Pulse it
+                replyLock.Key.ReplyValue = reads;
+                Monitor.PulseAll(replyLock.Key);
+                Logger.GetInstance().Log($"TransactionManager.HandleTransactionRequests", $"Reads executed, Pulsing all replyLock waiting threads");
+
+                // Write (async messages)
+                transaction.ExecuteWrites(this);
             }
         }
 
-        // Called when a transaction commits (on each replica)
-        private void OnTransactionReplicated(Transactions.Replication.BroadcastMessage message)
-        {
-            lock (this.KVStore)
-            {
-                Logger.GetInstance().Log($"TransactionManager.OnTransactionReplicated", $"Applying writes locally");
-                // Apply writes locally
-                foreach (Transactions.Replication.RPCStoreDadInt receivedDadInt in message.DadInts)
-                {
-                    StoreDadInt storeDadInt;
-                    if (!this.KVStore.TryGetValue(receivedDadInt.Key, out storeDadInt))
-                    {
-                        storeDadInt = new StoreDadInt();
-                        this.KVStore.Add(receivedDadInt.Key, storeDadInt);
-                    }
 
-                    // Update if
-                    // - Older epoch (maybe from other TM but we don't distinguish)
-                    // - Same epoch but new version (could be from releasing lease in TM1 and TM2 commiting a transaction)
-                    // last write wins!
-                    if (receivedDadInt.Epoch > storeDadInt.LastWriteEpoch || (receivedDadInt.Epoch == storeDadInt.LastWriteEpoch
-                            && receivedDadInt.EpochWriteVersion > storeDadInt.EpochWriteVersion))
+        // Called when a transaction commits (on each replica)
+        private void OnTransactionReplicated(Transactions.Replication.ReplicationMessage message)
+        {
+            lock (this)
+            {
+                lock (this.KVStore)
+                {
+                    Logger.GetInstance().Log($"TransactionManager.OnTransactionReplicated", $"Applying writes locally");
+                    // Apply writes locally
+                    foreach (Transactions.Replication.RPCStoreDadInt receivedDadInt in message.DadInts)
                     {
-                        storeDadInt.LastWriteEpoch = receivedDadInt.Epoch;
-                        storeDadInt.EpochWriteVersion = receivedDadInt.EpochWriteVersion;
-                        storeDadInt.Value = receivedDadInt.Value;
+                        StoreDadInt storeDadInt;
+                        if (!this.KVStore.TryGetValue(receivedDadInt.Key, out storeDadInt))
+                        {
+                            storeDadInt = new StoreDadInt();
+                            this.KVStore.Add(receivedDadInt.Key, storeDadInt);
+                        }
+
+                        // Update if
+                        // - Older epoch (maybe from other TM but we don't distinguish)
+                        // - Same epoch but new version (could be from releasing lease in TM1 and TM2 commiting a transaction)
+                        // last write wins!
+                        if (receivedDadInt.Epoch > storeDadInt.LastWriteEpoch || (receivedDadInt.Epoch == storeDadInt.LastWriteEpoch
+                                && receivedDadInt.EpochWriteVersion > storeDadInt.EpochWriteVersion))
+                        {
+                            storeDadInt.LastWriteEpoch = receivedDadInt.Epoch;
+                            storeDadInt.EpochWriteVersion = receivedDadInt.EpochWriteVersion;
+                            storeDadInt.Value = receivedDadInt.Value;
+                        }
                     }
                 }
-            }
 
-            // Allow reply to the client and Pulse it
-            lock (this.TransactionReplication)
-            {
+                // Allow reply to the client and Pulse it
                 try
                 {
                     KeyValuePair<TransactionReplyLock, Transactions.Transaction> replyLock = this.TransactionReplyLocks[message.Guid];
@@ -134,19 +144,25 @@ namespace TransactionManager
                     {
                         Logger.GetInstance().Log($"TransactionManager.OnTransactionReplicated", $"Pulsing other thread");
                         replyLock.Key.CanReply = true;
-                        Monitor.Pulse(replyLock.Key);
+                        Monitor.PulseAll(replyLock.Key);
                     }
 
                     Logger.GetInstance().Log($"TransactionManager.OnTransactionReplicated", $"Cleanup leases");
-                    // Since we sent out the request (and replicated it)
-                    //  check and release if we are holding conflicting leases
-                    replyLock.Value.CleanupLeases(this.Leasing);
                 }
                 catch
                 {
                     // Does not have the replyLock
                     Logger.GetInstance().Log("OnTransactionReplicated", "Will NOT reply to client (does not have replyLock)");
                 }
+            };
+
+            // Check and release if the transaction was holding conflicting leases
+            lock (this.Leasing)
+            {
+                List<string> leasesToCheck = message.ReadDadInts.Concat(message.DadInts.Select(x => x.Key)).ToList();
+                List<string> leasesToFree = leasesToCheck.Where(x => this.Leasing.HasLease(x, message.ExecutingManagerId) && this.Leasing.IsConflicting(x)).ToList();
+                Logger.GetInstance().Log("OnTransactionReplicated", $"Will free? checked={string.Join(",", leasesToCheck)} toFree={string.Join(",", leasesToFree)}");
+                this.Leasing.Free(leasesToFree, message.ExecutingManagerId);
             }
         }
     }

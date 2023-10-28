@@ -8,6 +8,7 @@ namespace Manager
     {
         public static Server GrpcServer { get; private set; }
         public static HostPort ManagerAddress { get; private set; } = new HostPort("localhost", 9999);
+        public static List<Peer> Servers { get; set; } = new List<Peer>();
 
         /// <summary>
         ///  The main entry point for the application.
@@ -21,7 +22,8 @@ namespace Manager
             Program.GrpcServer = new Server
             {
                 Services = {
-                    global::ManagerStatusHook.BindService(new ManagerStatusHookService(new ManagerStatusHookServiceLogic()))
+                    global::ManagerStatusHook.BindService(new ManagerStatusHookService(new ManagerStatusHookServiceLogic())),
+                    global::StatusService.BindService(new Status.Server.StatusService(new Status.Server.StatusServiceLogic(Program.Servers)))
                 },
                 Ports = { serverPort }
             };

@@ -2,7 +2,7 @@
   "profiles": {
     "Client": {
       "commandName": "Project",
-      "commandLineArgs": "client1 C:\\Users\\lucks\\code\\dad-projeto\\tests\\client.txt 1 TM1=http://127.0.0.1:10000 TM2=http://127.0.0.1:10002 TM3=http://127.0.0.1:10003"
+      "commandLineArgs": "client1 C:\\Users\\lucks\\code\\dad-projeto\\tests\\client.txt 0 TM1=http://127.0.0.1:10000 TM2=http://127.0.0.1:10002 TM3=http://127.0.0.1:10003"
     }
   }
 }

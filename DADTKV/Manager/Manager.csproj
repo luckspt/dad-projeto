@@ -16,14 +16,22 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
+
+		<ProjectReference Include="..\Client\Client.csproj" />
+		<ProjectReference Include="..\Common\Common.csproj" />
+		<ProjectReference Include="..\ConfigParser\Parser.csproj" />
+		<ProjectReference Include="..\DADTKV\DADTKV.csproj" />
+		<ProjectReference Include="..\LeaseManager\LeaseManager.csproj" />
+		<ProjectReference Include="..\ManagerClientServices\ManagerClientServices.csproj" />
+		<ProjectReference Include="..\TransactionManager\TransactionManager.csproj" />
+
+		<Protobuf Include="protos\Status.proto" GrpcServices="Both"></Protobuf>
+		<Protobuf Include="protos\Manager.proto" GrpcServices="Client" />
+		<Protobuf Include="protos\ManagerStatusHook.proto" GrpcServices="Server" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Common\Common.csproj" />
-		<ProjectReference Include="..\ConfigParser\Parser.csproj" />
-
-		<Protobuf Include="protos\Manager.proto" GrpcServices="Client" />
-		<Protobuf Include="protos\ManagerStatusHook.proto" GrpcServices="Server" />
+	  <Folder Include="Status\Client\" />
 	</ItemGroup>
 
 </Project>

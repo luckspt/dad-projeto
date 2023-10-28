@@ -16,7 +16,7 @@ namespace TransactionManager.Transactions.Replication.Server
             this.transactionManager = transactionManager;
         }
 
-        public bool URBBroadcast(BroadcastMessage message, string senderId)
+        public bool URBBroadcast(ReplicationMessage message, string senderId)
         {
             lock (this.transactionManager.TransactionReplication)
             {
@@ -29,11 +29,18 @@ namespace TransactionManager.Transactions.Replication.Server
             }
         }
 
-        public bool BEBDeliver(BroadcastMessage message, string senderId)
+        public bool BEBDeliver(ReplicationMessage message, string senderId)
         {
+            Logger.GetInstance().Log($"TransactionReplicationService.OnBEB", $"Waiting for sender to own all leases");
+
+            // !!!!IMPORTANT!!! CHECK IF THE TRANSACTION EXECUTOR HOLDS ALL THE LEASES LOCALLY!!!!
+            Transaction transaction = Transaction.FromReplicationMessage(message);
+            transaction.WaitToExecute(this.transactionManager, true);
+            // After this, it is assured that the transaction executer holds the leases
+
             lock (this.transactionManager.TransactionReplication)
             {
-                Logger.GetInstance().Log($"TransactionReplicationService.OnBEB", $"Adding message to acks");
+                Logger.GetInstance().Log($"TransactionReplicationService.OnBEB", $"Acknowledging message");
                 this.transactionManager.TransactionReplication.AddToAcks(message, senderId);
 
                 if (this.transactionManager.TransactionReplication.IsPending(message, senderId))

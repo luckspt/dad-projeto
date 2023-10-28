@@ -7,18 +7,24 @@ using System.Threading.Tasks;
 
 namespace TransactionManager.Transactions.Replication
 {
-    internal class BroadcastMessage
+    internal class ReplicationMessage
     {
-        public string Guid;
-        public List<RPCStoreDadInt> DadInts;
+        public string Guid { get; set; }
+        public string ExecutingManagerId { get; set; }
+        public List<RPCStoreDadInt> DadInts { get; set; } = new List<RPCStoreDadInt>(); // Force them to, at least, be an empty list
+        public List<string> ReadDadInts { get; set; } = new List<string>(); // Force them to, at least, be an empty list
+
+        public ReplicationMessage() { }
 
         public override bool Equals(object? obj)
         {
             if (obj == null) return false;
-            BroadcastMessage other = (BroadcastMessage)obj;
+            ReplicationMessage other = (ReplicationMessage)obj;
 
             if (!this.Guid.Equals(other.Guid)) return false;
+            if (!this.ExecutingManagerId.Equals(other.ExecutingManagerId)) return false;
             if (!this.DadInts.All(other.DadInts.Contains) || this.DadInts.Count != other.DadInts.Count) return false;
+            if (!this.ReadDadInts.All(other.ReadDadInts.Contains) || this.ReadDadInts.Count != other.ReadDadInts.Count) return false;
 
             return true;
         }
@@ -29,8 +35,12 @@ namespace TransactionManager.Transactions.Replication
             {
                 int hash = 13;
                 hash = (hash * 7) + this.Guid.GetHashCode();
+                hash = (hash * 7) + this.ExecutingManagerId.GetHashCode();
 
                 foreach (var dadInt in this.DadInts)
+                    hash = (hash * 7) + (dadInt == null ? 0 : dadInt.GetHashCode());
+
+                foreach (var dadInt in this.ReadDadInts)
                     hash = (hash * 7) + (dadInt == null ? 0 : dadInt.GetHashCode());
 
                 return hash;
@@ -40,10 +50,10 @@ namespace TransactionManager.Transactions.Replication
 
     internal class RPCStoreDadInt
     {
-        public string Key;
-        public int Value;
-        public int Epoch;
-        public int EpochWriteVersion;
+        public string Key { get; set; }
+        public int Value { get; set; }
+        public int Epoch { get; set; }
+        public int EpochWriteVersion { get; set; }
 
         public override bool Equals(object? obj)
         {

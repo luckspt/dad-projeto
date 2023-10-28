@@ -22,6 +22,7 @@
 
 		<Protobuf Include="protos\TransactionReplication.proto" GrpcServices="Both" />
 		<Protobuf Include="protos\LeaseUpdates.proto" GrpcServices="Server" />
+		<Protobuf Include="protos\Status.proto" GrpcServices="Server" />
 		<Protobuf Include="protos\LeaseRequesting.proto" GrpcServices="Client" />
 		<Protobuf Include="protos\TransactionRunning.proto" GrpcServices="Server" />
 	</ItemGroup>

@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using TransactionManager.Leases.LeaseUpdates;
 using TransactionManager.Transactions.Replication;
 using TransactionManager.Transactions.Replication.Server;
+using TransactionManager.Status;
 
 namespace TransactionManager
 {
@@ -40,7 +41,8 @@ namespace TransactionManager
                     ManagerService.BindService(new ManagerClientServices.ManagerService(managerServiceLogic)),
                     global::LeaseUpdatesService.BindService(new Leases.LeaseUpdates.LeaseUpdatesService(leaseUpdatesServiceLogic)),
                     global::TransactionRunningService.BindService(new Transactions.Replication.TransactionRunningService(transactionRunningServiceLogic)),
-                    global::TransactionReplicationService.BindService(new Transactions.Replication.Server.TransactionReplicationService(transactionReplicationServiceLogic))
+                    global::TransactionReplicationService.BindService(new Transactions.Replication.Server.TransactionReplicationService(transactionReplicationServiceLogic)),
+                    global::StatusService.BindService(new Status.StatusService(new Status.StatusServiceLogic(tm)))
                 },
                 Ports = { serverPort }
             };

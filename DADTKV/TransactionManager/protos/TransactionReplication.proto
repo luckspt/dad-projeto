@@ -13,16 +13,19 @@ message RPCStoreDadInt {
 	int32 epochWriteVersion = 4;
 }
 
-message BroadcastMessage
+message ReplicationMessage
 {
 	string guid = 1;
-	repeated RPCStoreDadInt dadInts = 2;
+	// Who initiated the replication
+	string executingManagerId = 2;
+	repeated RPCStoreDadInt dadInts = 3;
+	repeated string readDadInts = 4;
 }
 
 // URBBroadcast
 message URBBroadcastRequest
 {
-	BroadcastMessage message = 1;
+	ReplicationMessage message = 1;
 	string senderId = 2;
 }
 
@@ -35,7 +38,7 @@ message URBBroadcastResponse
 // BEBDeliver
 message BEBDeliverRequest
 {
-	BroadcastMessage message = 1;
+	ReplicationMessage message = 1;
 	string senderId = 2;
 }
 

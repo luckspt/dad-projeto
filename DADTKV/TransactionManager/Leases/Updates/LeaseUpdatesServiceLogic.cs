@@ -3,6 +3,7 @@ using Grpc.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -20,25 +21,31 @@ namespace TransactionManager.Leases.LeaseUpdates
 
         public bool LeaseUpdate(LeaseUpdateRequest update)
         {
+            bool hasEpoch = false;
+
             lock (this.transactionManager.Leasing.LeaseReceptionBuffer)
             {
-                Logger.GetInstance().Log("LeaseUpdateService", $"Received a Lease update for epoch={update.Epoch}!");
+                hasEpoch = this.transactionManager.Leasing.LeaseReceptionBuffer.Has(update.Epoch);
+            }
 
-                // We already had a majority, so ignore
-                // TODO is this enough? because if we clear the leases, then we're screwed
-                if (this.transactionManager.Leasing.LeaseReceptionBuffer.Has(update.Epoch))
-                    return true;
+            Logger.GetInstance().Log("LeaseUpdateService", $"Received a Lease update for epoch={update.Epoch}!");
 
-                // Check if we have a majority or not
-                lock (this)
+            // We already applied of have had a majority, so ignore
+            if (this.transactionManager.Leasing.Epoch > update.Epoch || hasEpoch)
+                return true;
+
+            // Check if we have a majority or not
+            lock (this.receptionCounts)
+            {
+                int count = 0;
+                if (this.receptionCounts.ContainsKey(update.Epoch))
+                    count = this.receptionCounts[update.Epoch];
+
+                count++;
+
+                lock (this.transactionManager.Leasing)
                 {
-                    int count = 0;
-                    if (this.receptionCounts.ContainsKey(update.Epoch))
-                        count = this.receptionCounts[update.Epoch];
-
-                    count++;
-
-                    int needed = this.transactionManager.Leasing.LeaseManagers.Count / 2;
+                    int needed = (this.transactionManager.Leasing.LeaseManagers.Count - 1) / 2 + 1;
                     Logger.GetInstance().Log("LeaseUpdateService", $"Got {count}/{needed} updates for epoch={update.Epoch}");
 
                     // First arrival define the start of the new epoch
@@ -46,35 +53,22 @@ namespace TransactionManager.Leases.LeaseUpdates
                         this.transactionManager.Leasing.Epoch = update.Epoch;
 
                     if (count == needed)
-                        this.ApplyUpdate(update);
-                    else
-                        this.receptionCounts[update.Epoch] = count;
+                    {
+                        // Add to the buffer (don't process now) because of applying lease updates IN ORDER!!
+                        // it's fine if we block; we will eventually receive a response from paxos because it guarantees termination
+                        Logger.GetInstance().Log("LeaseUpdateService.ApplyUpdate", $"Got a majority so add it to updates buffer");
+                        this.transactionManager.Leasing.LeaseReceptionBuffer.Add(update);
+                    }
+
+                    this.receptionCounts[update.Epoch] = count;
+
+                    if (count == this.transactionManager.Leasing.LeaseManagers.Count)
+                        this.receptionCounts.Remove(update.Epoch);
                 }
             }
 
+
             return true;
-        }
-
-        private void ApplyUpdate(LeaseUpdateRequest update)
-        {
-            Logger.GetInstance().Log("LeaseUpdateService.ApplyUpdate", $"Got a majority so add it to buffer");
-
-            // We have a majority - its an update
-            this.transactionManager.Leasing.LeaseReceptionBuffer.Add(update);
-            // this.receptionCounts.Remove(update.Epoch); // TODO RELATED TO THE FIRST TODO 
-
-            // TODO lease reception buffer TO the actual leases
-
-            // Check if there is any lease that's conflicting after executing this transaction --
-            List<string> conflictingLeases = this.transactionManager.Leasing.GetOwnedLeases()
-                    .Where(lease => this.transactionManager.Leasing.IsConflicting(lease))
-                    .ToList();
-
-            // Free them
-            // TODO how do we handle wanting to apply a transaction but having to free the lease?
-            //if (conflictingLeases.Count > 0)
-            // this.leasing.Free(conflictingLeases);
-            // --
         }
     }
 }

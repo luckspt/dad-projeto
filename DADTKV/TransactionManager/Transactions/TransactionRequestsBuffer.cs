@@ -19,9 +19,19 @@ namespace TransactionManager.Transactions
             buffer = new List<Transaction>();
         }
 
+        public void AddToHead(Transaction transaction)
+        {
+            this.buffer.Insert(0, transaction);
+        }
+
         public void Add(Transaction transaction)
         {
-            buffer.Add(transaction);
+            this.buffer.Add(transaction);
+        }
+
+        public Transaction Get(int index)
+        {
+            return this.buffer[index];
         }
 
         public Transaction Take()
