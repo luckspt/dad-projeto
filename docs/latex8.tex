@@ -22,18 +22,14 @@
 \title{DADTKV}
 
 \author{Lucas Pinto\\
-Instituto Superio Técnico\\
+Instituto Superior Técnico,\\
 Universidade de Lisboa\\
 lucas.f.pinto@tecnico.ulisboa.pt\\
-% For a paper whose authors are all at the same institution, 
-% omit the following lines up until the closing ``}''.
-% Additional authors and addresses can be added with ``\and'', 
-% just like the second author.
 \and
-Second Author\\
-Institution2\\
-First line of institution2 address\\ Second line of institution2 address\\ 
-SecondAuthor@institution2.com\\
+Rafael Santos\\
+Instituto Superior Técnico,\\
+Universidade de Lisboa\\ 
+rafael.santos.alves@tecnico.ulisboa.pt\\
 }
 
 \maketitle
@@ -52,17 +48,12 @@ SecondAuthor@institution2.com\\
 %------------------------------------------------------------------------- 
 \Section{Introduction}
 
-This project introduces a complex architecture with three tiers, encompassing client applications,
+This project introduces a three tier architecture, encompassing client applications,
 transaction managers, and lease manager servers. \textbf{DADTKV}'s primary data unit is the \textit{DadInt}
 key-value pair, with a focus on strict serializability to ensure data consistency.
 
 %------------------------------------------------------------------------- 
-\Section{Implementations}
-
-\textbf{TODO}
-
-%------------------------------------------------------------------------- 
-\SubSection{Manager}
+\Section{Manager}
 
 The Manager process is the main entry point for the system. It is responsible for reading
 the system configuration and starting the other processes.
@@ -72,165 +63,147 @@ This, however, does not guarantee that the Lease Managers are ready before the T
 Because of that, each process notifies the Manager, through a \textit{gRPC} call, that it is ready to work.
 
 After all Lease and Transaction Managers are ready, the Manager demands each one to start
-their operations. It is also at this time that the Manager will start the Client processes.
+their operations through a serial broadcast \textendash messages are blocking.
+After that, the Manager will start the Client processes.
 
+Now, the Manager will only do two activities: receive \textit{StatusHook} updates from each server process.
+This was not much explored, but allows for the System Administrator to have a better
+visualization of the system; and receive Status requests from Clients, which will then relay to
+each server process, so that the servers write their status on the terminals.
+
+For the Status relaying, the Manager does a concurrent broadcast \textendash the messages do not block.
 %------------------------------------------------------------------------- 
-\SubSection{Clients}
+\Section{Clients}
 
 Client processes are very simple, in the state that they cycle through the list of operations
 that they have to execute, over and over again.
 
-They will just send requests to a Transaction Managers predetermined by the Manager
+They will just send requests to a Transaction Managers, predetermined by the Manager,
 and wait for the response.
 
-In case the given Transaction Manager is suspected of not being available,
-the Client will try another Transaction Manager it thinks is correct.
-This works by detecting if the gRPC call fails because the server is unable to accept it.
+In case the given Transaction Manager is suspected of being unavailable,
+the Client would try another Transaction Manager it thinks is correct.
+This would work by detecting if the \textit{gRPC} call fails because the server is unable
+to accept it.
+However, due to time constraints, such feature was not implemented.
 
 %------------------------------------------------------------------------- 
-\SubSection{Transaction Managers}
+\Section{Transaction Managers}
 
-\textbf{TODO}
+Transaction Managers are the most complex processes in the system. They are responsible
+for receiving transaction execution requests and make sure they are executed concurrently and
+correctly.
+
+\SubSection{Transaction Requests Reception}
+Transaction Execution requests are received through a \textit{gRPC} call from the clients.
+The request is put in a buffer to be executed sequentially by a single worker thread.
+
+In order to maintain the client connection open, the receiving thread is blocked and
+a monitor will wait for the reply lock to be pulsed. This reply lock may be pulsed in two situations:
+when the transaction read state is populated, and when the transaction replication is successful.
+Regarding failure detection, like mentioned above, is not implemented. The consequences of this is that
+the client will be blocked until the transaction is successful. A timeout could have been implemented
+to release the client from the reply lock block.
+
+\SubSection{Transaction Execution}
+The transaction starts its execution phase when the worker thread is available to execute it.
+It takes the first from the buffer queue (FIFO) and starts to operate on it.
+
+If there are leases the Transaction Manager does not own, it will request to the Lease Managers,
+through a concurrent broadcast, and wait for the lease update to be received. Just like the client reply lock block,
+this is achieved by a monitor that waits for the lease update lock to be pulsed, and re-checks each time
+if all the required leases are now owned.
+
+As also stated before, the reads are populated to the reply lock object (and it is pulsed to notify the waiting thread).
+The reads are made locally (because they are read-only), as there is no need to form a quorum to satisfy strict serializability.
+
+\SubSection{Transaction Replication}
+However, for the writes, the Transaction Manager must form a write quorum to successfully replicate the transaction.
+This is achieved by running Uniform Reliable Broadcast \cite{URB} (URB): the coordinator sends a concurrent broadcast
+to all other processes, which will add the (message, sender) tuple to their pending list and re-broadcast
+the message. On every reception of a (message, sender), the receiver adds the tuple to its acks list.
+If the tuple was already pending, it will check if it can deliver by guaranteeing it was not delivered
+before and it has a majority.
+
+Commiting (on URB deliver) a transaction will apply the value changes to the local state of the Transaction Manager.
+The values are only updated if they are more recent than the current value. This is done by passing the
+epoch of the transaction and the write version of the value (it is reset on each epoch change).
+In conclusion, last write wins.
+
+\SubSection{Lease Updates}
+All Transaction Managers receive the same lease updates messages, which can be seen as a key-value pair between
+key (lease) and the list of processes that want to use it in the order established by the Lease Managers.
+
+Because Consensus may take more time for a later instance than on an earlier instance, updates may be received
+out of order. Because of this, lease updates are also added to a buffer to be processed sequentially.
+Because Paxos guarantees termination, we will not block forever, but may still block for an arbitrary amount of time.
+
+Each time a Transaction Manager applies lease updates, it will pulse the Leasing object responsible for holding
+all the leases, so that the waiting thread is notified and can re-check if it owns all the leases it needs.
+
+\SubSection{Lease Freeing}
+Leases, by requirement, are to be kept indefinitely, and only released when the process notices
+it owns a lease that is now conflicting and must release it after a single transaction is executed.
+
+For this, it was decided that the best course of action was implicitly freeing the leases when
+transactions are commited, instead of explicitly freeing them when they are no longer needed.
+
+The freeing only happens when commiting a transaction, and each process will check if the transaction
+was commited with any conflicting lease. However, this is not enough, because the process may not
+have all the updates from the Lease Managers \textendash TM1 may receive the updates and the transaction
+replication may arrive earlier than the updates to TM2, which could make TM2 decide there is no conflict
+when there actually is.
+
+To solve this, for transaction replication to be accepted by a process, it must follow the same rules
+for executing a transaction, which is verifying the sender Transaction Manager owns all the leases it needs.
+By following the same blocking process, this guarantees that the lease freeing on transaction commit will
+see all the necessary updates. % this isn't exactly true because it could happen after the epoch but oh well
+
+What if a Transaction Manager owns a lease from epoch 1 and only on epoch 24 is it conflictuous?
+In this case, it will generate a "dummy"/no-op transaction to be replicated to all other processes,
+so that each one can free the lease. In this case, the lease freeing is "explicit", but maskered
+beneath a read-only transaction.
+
+Freeing leases when a process crashes is not implemented. This, however, could be achieved by
+
+
 
 %------------------------------------------------------------------------- 
-\SubSection{Lease Managers}
+\Section{Lease Managers}
 When the Lease Manager is ordered to start by the Manager, it will create the
-timer responsible for the creation of \textit{Paxos} instances.
+timer responsible for the creation of Consensus instances.
 This timer runs every \textit{slotDuration} milliseconds.
 
-Lease requests are stored in a \textit{buffer queue}, so that no requests are lost between
-between \textit{Paxos} instances. Whenever a new instance is created, it will lock
-and fetch all requests from the \textit{buffer}, clear, and unlock it for more
-requests to be received.
+\SubSection{Lease Requests Reception}
+Just like all the other request receptions, lease requests are stored in a \textit{buffer queue},
+so that no requests are between Consensus instances. Whenever a new instance is created,
+it will lock and fetch all requests from the \textit{buffer}, clear, and unlock it for more
+requests to be added.
 
-\textit{Paxos} is extended to allow the Proposer to provide a \textit{SHA256 hash} of
-the Lease requests (value) it wishes to propose on the Prepare message. The Propose
+\SubSection{Consensus}
+\textit{Paxos} \cite{Paxos} is extended to allow the Proposer to provide a \textit{SHA256 hash} of
+the lease requests (value) it wishes to propose on the Prepare message. The Promise
 message comes as a response to the \textit{gRPC} Prepare call, and will include the
-respondents' Lease requests if the hashes are different -- this allows for the Proposer
-to make more complete proposal.
+respondents' lease requests if the hashes are different \textendash this allows for the Proposer
+to make a more complete proposal.
 
-%------------------------------------------------------------------------- 
-\SubSection{Type-style and fonts}
+Even if there are no requests on the \textit{buffer}, the \textit{Paxos} instance will
+still be created, because it is possible for a process to have received no requests,
+but other processes have.
 
-Wherever Times is specified, Times Roman may also be used. If neither is 
-available on your word processor, please use the font closest in 
-appearance to Times that you have access to.
+Then, Accept messages are sent by the Proposer to all Acceptors, and if the Acceptors accept the message,
+will concurrent broadcast an Accepted message (the Lease Update message) to the Learners (Transaction Managers).
+The reply to the Accept message call serves as the Accepted message.
 
-MAIN TITLE. Center the title 1-3/8 inches (3.49 cm) from the top edge of 
-the first page. The title should be in Times 14-point, boldface type. 
-Capitalize the first letter of nouns, pronouns, verbs, adjectives, and 
-adverbs; do not capitalize articles, coordinate conjunctions, or 
-prepositions (unless the title begins with such a word). Leave two blank 
-lines after the title.
+Althought fault tolerance was not implemented, it is technically possible for other processes
+to takeover the Proposer role as each process checks if its a Proposer depending on the proposal number.
+Because the suspect flags are not implemented and updated, the latter is not seen happening.
 
-AUTHOR NAME(s) and AFFILIATION(s) are to be centered beneath the title 
-and printed in Times 12-point, non-boldface type. This information is to 
-be followed by two blank lines.
+The implementation does not follow \textit{MultiPaxos} specification, specially the 
+predetermined leader, in favor of a more correct and complete proposal. Still,
+the current implementation allows for multiple instances to run in parallel, identified by
+their slot number.
 
-The ABSTRACT and MAIN TEXT are to be in a two-column format. 
-
-MAIN TEXT. Type main text in 10-point Times, single-spaced. Do NOT use 
-double-spacing. All paragraphs should be indented 1 pica (approx. 1/6 
-inch or 0.422 cm). Make sure your text is fully justified---that is, 
-flush left and flush right. Please do not place any additional blank 
-lines between paragraphs. Figure and table captions should be 10-point 
-Helvetica boldface type as in
-\begin{figure}[h]
-   \caption{Example of caption.}
-\end{figure}
-
-\noindent Long captions should be set as in 
-\begin{figure}[h] 
-   \caption{Example of long caption requiring more than one line. It is 
-     not typed centered but aligned on both sides and indented with an 
-     additional margin on both sides of 1~pica.}
-\end{figure}
-
-\noindent Callouts should be 9-point Helvetica, non-boldface type. 
-Initially capitalize only the first word of section titles and first-, 
-second-, and third-order headings.
-
-FIRST-ORDER HEADINGS. (For example, {\large \bf 1. Introduction}) 
-should be Times 12-point boldface, initially capitalized, flush left, 
-with one blank line before, and one blank line after.
-
-SECOND-ORDER HEADINGS. (For example, {\elvbf 1.1. Database elements}) 
-should be Times 11-point boldface, initially capitalized, flush left, 
-with one blank line before, and one after. If you require a third-order 
-heading (we discourage it), use 10-point Times, boldface, initially 
-capitalized, flush left, preceded by one blank line, followed by a period 
-and your text on the same line.
-
-%------------------------------------------------------------------------- 
-\SubSection{Footnotes}
-
-Please use footnotes sparingly%
-\footnote
-   {%
-     Or, better still, try to avoid footnotes altogether.  To help your 
-     readers, avoid using footnotes altogether and include necessary 
-     peripheral observations in the text (within parentheses, if you 
-     prefer, as in this sentence).
-   }
-and place them at the bottom of the column on the page on which they are 
-referenced. Use Times 8-point type, single-spaced.
-
-
-%------------------------------------------------------------------------- 
-\SubSection{References}
-
-List and number all bibliographical references in 9-point Times, 
-single-spaced, at the end of your paper. When referenced in the text, 
-enclose the citation number in square brackets, for example~\cite{ex1}. 
-Where appropriate, include the name(s) of editors of referenced books.
-
-%------------------------------------------------------------------------- 
-\SubSection{Illustrations, graphs, and photographs}
-
-All graphics should be centered. Your artwork must be in place in the 
-article (preferably printed as part of the text rather than pasted up). 
-If you are using photographs and are able to have halftones made at a 
-print shop, use a 100- or 110-line screen. If you must use plain photos, 
-they must be pasted onto your manuscript. Use rubber cement to affix the 
-images in place. Black and white, clear, glossy-finish photos are 
-preferable to color. Supply the best quality photographs and 
-illustrations possible. Penciled lines and very fine lines do not 
-reproduce well. Remember, the quality of the book cannot be better than 
-the originals provided. Do NOT use tape on your pages!
-
-%------------------------------------------------------------------------- 
-\SubSection{Color}
-
-The use of color on interior pages (that is, pages other
-than the cover) is prohibitively expensive. We publish interior pages in 
-color only when it is specifically requested and budgeted for by the 
-conference organizers. DO NOT SUBMIT COLOR IMAGES IN YOUR 
-PAPERS UNLESS SPECIFICALLY INSTRUCTED TO DO SO.
-
-%------------------------------------------------------------------------- 
-\SubSection{Symbols}
-
-If your word processor or typewriter cannot produce Greek letters, 
-mathematical symbols, or other graphical elements, please use 
-pressure-sensitive (self-adhesive) rub-on symbols or letters (available 
-in most stationery stores, art stores, or graphics shops).
-
-%------------------------------------------------------------------------ 
-\SubSection{Copyright forms}
-
-You must include your signed IEEE copyright release form when you submit 
-your finished paper. We MUST have this form before your paper can be 
-published in the proceedings.
-
-%------------------------------------------------------------------------- 
-\SubSection{Conclusions}
-
-Please direct any questions to the production editor in charge of these 
-proceedings at the IEEE Computer Society Press: Phone (714) 821-8380, or 
-Fax (714) 761-1784.
-
-%------------------------------------------------------------------------- 
-\nocite{ex1,ex2}
 \bibliographystyle{latex8}
 \bibliography{latex8}
 
